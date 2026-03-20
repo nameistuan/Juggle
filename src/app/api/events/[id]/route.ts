@@ -8,7 +8,7 @@ export async function PUT(
   try {
     const { id } = await params
     const body = await request.json()
-    const { title, description, startTime, endTime } = body
+    const { title, description, startTime, endTime, taskId, isFluid } = body
 
     const event = await prisma.event.update({
       where: { id },
@@ -16,7 +16,9 @@ export async function PUT(
         title,
         description,
         startTime: startTime ? new Date(startTime) : undefined,
-        endTime: endTime ? new Date(endTime) : undefined
+        endTime: endTime ? new Date(endTime) : undefined,
+        taskId: taskId !== undefined ? taskId : undefined,
+        isFluid: isFluid !== undefined ? isFluid : undefined
       }
     })
 
