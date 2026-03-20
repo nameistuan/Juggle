@@ -11,8 +11,9 @@ datasource db {
 model Project {
   id        String   @id @default(uuid())
   name      String
-  color     String   @default("#4f46e5")
+  color     String   @default("#312E81")
   tasks     Task[]
+  events    Event[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -35,6 +36,8 @@ model Event {
   description String?
   startTime   DateTime
   endTime     DateTime
+  projectId   String?
+  project     Project? @relation(fields: [projectId], references: [id])
   taskId      String?
   task        Task?    @relation(fields: [taskId], references: [id])
   isFluid     Boolean  @default(false)
