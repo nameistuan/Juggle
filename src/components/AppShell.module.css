@@ -151,8 +151,7 @@
   font-weight: 600;
   color: var(--text-primary);
   letter-spacing: -0.02em;
-  margin-right: 0.5rem;
-  min-width: 200px;
+  margin-left: 0.5rem;
 }
 
 .todayBtn {
@@ -165,6 +164,7 @@
   border-radius: 9999px;
   cursor: pointer;
   transition: all 0.2s ease;
+  margin-left: 0.5rem;
   margin-right: 1.5rem;
 }
 
@@ -176,7 +176,6 @@
   display: flex;
   align-items: center;
   gap: 0.25rem;
-  margin-right: 1.5rem;
 }
 
 .iconBtn {

@@ -73,12 +73,6 @@ export default async function MonthView({
 
   return (
     <div className={styles.monthView}>
-      <div className={styles.daysHeader}>
-        {daysOfWeek.map(day => (
-          <span key={day}>{day}</span>
-        ))}
-      </div>
-      
       <div className={styles.calendarGrid}>
         {calendarDays.map((day, index) => (
           <div 
@@ -89,8 +83,13 @@ export default async function MonthView({
               ${day.isOtherMonth ? styles.otherMonth : ''}
             `}
           >
-            <div className={styles.dateNumber}>
-              {day.date}
+            {index < 7 && (
+              <div className={styles.dayName}>{format(day.dateObj, 'EEE')}</div>
+            )}
+            <div className={styles.dateNumberWrapper}>
+              <div className={styles.dateNumber}>
+                {day.date}
+              </div>
             </div>
             
             <div className={styles.eventsContainer}>

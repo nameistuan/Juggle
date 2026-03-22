@@ -108,7 +108,6 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                 <path d="M3 18H21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
             </button>
-            <h2 className={styles.displayDate}>{displayDate}</h2>
             <button 
               className={styles.todayBtn} 
               onClick={() => router.push(pathname)}
@@ -127,6 +126,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                 </svg>
               </button>
             </div>
+            <h2 className={styles.displayDate}>{displayDate}</h2>
             
             <div className={styles.viewToggle}>
               <button 

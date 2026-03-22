@@ -6,25 +6,6 @@
   background-color: var(--surface-color);
 }
 
-.daysHeader {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  text-align: center;
-  font-weight: 600;
-  font-size: 0.85rem;
-  color: var(--text-secondary);
-  border-bottom: 1px solid var(--border-color);
-}
-
-.daysHeader span {
-  padding: 0.75rem 0.5rem;
-  border-right: 1px solid var(--border-color);
-}
-
-.daysHeader span:last-child {
-  border-right: none;
-}
-
 .calendarGrid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
@@ -54,16 +35,27 @@
   background-color: var(--grid-border);
 }
 
+.dayName {
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-align: center;
+  margin-top: 0.5rem;
+  margin-bottom: 0.1rem;
+}
+
+.dateNumberWrapper {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  margin-bottom: 0.5rem;
+}
+
 .dayCell.today .dateNumber {
   background-color: var(--primary-color);
   color: white;
-  width: 28px;
-  height: 28px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .dayCell.otherMonth .dateNumber {
@@ -72,13 +64,11 @@
 }
 
 .dateNumber {
-  font-size: 0.9rem;
+  font-size: 1.1rem;
   font-weight: 500;
   color: var(--text-primary);
-  margin-bottom: 0.5rem;
-  align-self: flex-start;
-  width: 28px;
-  height: 28px;
+  width: 32px;
+  height: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
