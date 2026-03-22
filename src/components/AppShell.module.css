@@ -146,11 +146,54 @@
   color: var(--text-primary);
 }
 
-.dateSelector {
+.displayDate {
   font-size: 1.5rem;
   font-weight: 600;
   color: var(--text-primary);
   letter-spacing: -0.02em;
+  margin-right: 0.5rem;
+}
+
+.todayBtn {
+  background-color: var(--grid-border);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  padding: 0.25rem 0.75rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  margin-right: 1.5rem;
+}
+
+.todayBtn:hover {
+  background-color: var(--border-color);
+}
+
+.monthNavButtons {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin-right: 1.5rem;
+}
+
+.iconBtn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--text-secondary);
+  padding: 0.4rem;
+  border-radius: 50%;
+  transition: background-color 0.2s, color 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.iconBtn:hover {
+  background-color: var(--surface-hover);
+  color: var(--text-primary);
 }
 
 .viewToggle {

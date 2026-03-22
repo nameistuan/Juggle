@@ -108,17 +108,25 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                 <path d="M3 18H21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
             </button>
-            <div className={styles.dateSelector}>
-              <button className={styles.iconBtn} onClick={handlePrevMonth}>&lt;</button>
-              <h2>{displayDate}</h2>
-              <button className={styles.iconBtn} onClick={handleNextMonth}>&gt;</button>
-            </div>
+            <h2 className={styles.displayDate}>{displayDate}</h2>
             <button 
               className={styles.todayBtn} 
               onClick={() => router.push(pathname)}
             >
               Today
             </button>
+            <div className={styles.monthNavButtons}>
+              <button className={styles.iconBtn} onClick={handlePrevMonth}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+                </svg>
+              </button>
+              <button className={styles.iconBtn} onClick={handleNextMonth}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+            </div>
             
             <div className={styles.viewToggle}>
               <button 
