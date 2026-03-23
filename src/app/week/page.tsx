@@ -7,9 +7,6 @@ import {
   parseISO,
   startOfWeek
 } from 'date-fns'
-  format,
-  parseISO
-} from 'date-fns'
 
 export const dynamic = 'force-dynamic' 
 
