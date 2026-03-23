@@ -17,14 +17,16 @@ export const dynamic = 'force-dynamic' // Ensure Next.js doesn't cache the real-
 export default async function MonthView({
   searchParams
 }: {
-  searchParams: Promise<{ month?: string }>
+  searchParams: Promise<{ month?: string, date?: string }>
 }) {
   const resolvedParams = await searchParams
   const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
   
   // 1. Determine current month interval structure
   let currentDate = new Date()
-  if (resolvedParams.month) {
+  if (resolvedParams.date) {
+    currentDate = parseISO(`${resolvedParams.date}T12:00:00Z`)
+  } else if (resolvedParams.month) {
     currentDate = parseISO(`${resolvedParams.month}-01T12:00:00Z`)
   }
   const monthStart = startOfMonth(currentDate)

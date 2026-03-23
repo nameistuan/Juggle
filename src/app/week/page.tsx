@@ -14,12 +14,14 @@ export const dynamic = 'force-dynamic'
 export default async function WeekView({
   searchParams
 }: {
-  searchParams: Promise<{ month?: string }>
+  searchParams: Promise<{ month?: string, date?: string }>
 }) {
   const resolvedParams = await searchParams
   
   let currentDate = new Date()
-  if (resolvedParams.month) {
+  if (resolvedParams.date) {
+    currentDate = parseISO(`${resolvedParams.date}T12:00:00Z`)
+  } else if (resolvedParams.month) {
     currentDate = parseISO(`${resolvedParams.month}-01T12:00:00Z`)
   }
   
@@ -65,11 +67,11 @@ export default async function WeekView({
         {/* Days Grid */}
         <div className={styles.daysContainer}>
           {daysInGrid.map(day => {
-            const dayEvents = events.filter(e => format(e.startTime, 'yyyy-MM-dd') === format(day, 'yyyy-MM-dd'))
+            const dayEvents = events.filter((e: any) => format(e.startTime, 'yyyy-MM-dd') === format(day, 'yyyy-MM-dd'))
 
             return (
               <div key={day.toISOString()} className={styles.dayCol}>
-                {dayEvents.map(event => {
+                {dayEvents.map((event: any) => {
                   const startHour = event.startTime.getHours()
                   const startMin = event.startTime.getMinutes()
                   

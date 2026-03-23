@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { useSearchParams, useRouter, usePathname } from 'next/navigation'
-import { format, addMonths, subMonths, parseISO } from 'date-fns'
+import { format, addMonths, subMonths, addWeeks, subWeeks, addDays, subDays, parseISO } from 'date-fns'
 import styles from './AppShell.module.css'
 import EventModal from './EventModal'
 
@@ -15,19 +15,35 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const router = useRouter()
   const pathname = usePathname()
   
-  const monthParam = searchParams.get('month')
+  const dateParam = searchParams.get('date')
+  const monthParam = searchParams.get('month') // Fallback
+  
   // Read exactly at noon to avoid timezone shift dropping it to prev day
-  const currentDate = monthParam ? parseISO(`${monthParam}-01T12:00:00Z`) : new Date()
-  const displayDate = format(currentDate, 'MMMM yyyy')
-
-  const handlePrevMonth = () => {
-    const prev = subMonths(currentDate, 1)
-    router.push(`${pathname}?month=${format(prev, 'yyyy-MM')}`)
+  let currentDate = new Date()
+  if (dateParam) {
+    currentDate = parseISO(`${dateParam}T12:00:00Z`)
+  } else if (monthParam) {
+    currentDate = parseISO(`${monthParam}-01T12:00:00Z`)
   }
 
-  const handleNextMonth = () => {
-    const next = addMonths(currentDate, 1)
-    router.push(`${pathname}?month=${format(next, 'yyyy-MM')}`)
+  const displayDate = pathname === '/day' 
+    ? format(currentDate, 'MMMM d, yyyy')
+    : format(currentDate, 'MMMM yyyy')
+
+  const handlePrev = () => {
+    let prev = currentDate
+    if (pathname === '/') prev = subMonths(currentDate, 1)
+    if (pathname === '/week') prev = subWeeks(currentDate, 1)
+    if (pathname === '/day') prev = subDays(currentDate, 1)
+    router.push(`${pathname}?date=${format(prev, 'yyyy-MM-dd')}`)
+  }
+
+  const handleNext = () => {
+    let next = currentDate
+    if (pathname === '/') next = addMonths(currentDate, 1)
+    if (pathname === '/week') next = addWeeks(currentDate, 1)
+    if (pathname === '/day') next = addDays(currentDate, 1)
+    router.push(`${pathname}?date=${format(next, 'yyyy-MM-dd')}`)
   }
   
   const isResizing = useRef(false)
@@ -115,12 +131,12 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
               Today
             </button>
             <div className={styles.monthNavButtons}>
-              <button className={styles.iconBtn} onClick={handlePrevMonth}>
+              <button className={styles.iconBtn} onClick={handlePrev}>
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
                 </svg>
               </button>
-              <button className={styles.iconBtn} onClick={handleNextMonth}>
+              <button className={styles.iconBtn} onClick={handleNext}>
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
                 </svg>
@@ -134,15 +150,15 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             <div className={styles.viewToggle}>
               <button 
                 className={`${styles.toggleBtn} ${pathname === '/' ? styles.active : ''}`}
-                onClick={() => router.push('/')}
+                onClick={() => router.push(dateParam ? `/?date=${dateParam}` : '/')}
               >Month</button>
               <button 
                 className={`${styles.toggleBtn} ${pathname === '/week' ? styles.active : ''}`}
-                onClick={() => router.push('/week')}
+                onClick={() => router.push(dateParam ? `/week?date=${dateParam}` : '/week')}
               >Week</button>
               <button 
                 className={`${styles.toggleBtn} ${pathname === '/day' ? styles.active : ''}`}
-                onClick={() => router.push('/day')}
+                onClick={() => router.push(dateParam ? `/day?date=${dateParam}` : '/day')}
               >Day</button>
             </div>
             

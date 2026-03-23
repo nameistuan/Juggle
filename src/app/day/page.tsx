@@ -11,12 +11,14 @@ export const dynamic = 'force-dynamic'
 export default async function DayView({
   searchParams
 }: {
-  searchParams: Promise<{ month?: string }>
+  searchParams: Promise<{ month?: string, date?: string }>
 }) {
   const resolvedParams = await searchParams
   
   let currentDate = new Date()
-  if (resolvedParams.month) {
+  if (resolvedParams.date) {
+    currentDate = parseISO(`${resolvedParams.date}T12:00:00Z`)
+  } else if (resolvedParams.month) {
     currentDate = parseISO(`${resolvedParams.month}-01T12:00:00Z`)
   }
   
