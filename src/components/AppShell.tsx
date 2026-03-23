@@ -6,26 +6,27 @@ import { format, addMonths, subMonths, addWeeks, subWeeks, addDays, subDays, par
 import styles from './AppShell.module.css'
 import EventModal from './EventModal'
 
-export default function AppShell({ children }: { children: React.ReactNode }) {
-  const [sidebarWidth, setSidebarWidth] = useState(250)
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true)
+export default function AppShell({ 
+  children,
+  defaultSidebarOpen = true,
+  defaultSidebarWidth = 250
+}: { 
+  children: React.ReactNode,
+  defaultSidebarOpen?: boolean,
+  defaultSidebarWidth?: number
+}) {
+  const [sidebarWidth, setSidebarWidth] = useState(defaultSidebarWidth)
+  const [isSidebarOpen, setIsSidebarOpen] = useState(defaultSidebarOpen)
   const [isMounted, setIsMounted] = useState(false)
   const [isEventModalOpen, setIsEventModalOpen] = useState(false)
   
-  // Hydrate from localStorage on mount
-  useEffect(() => {
-    const savedWidth = localStorage.getItem('pac_sidebar_width')
-    const savedOpen = localStorage.getItem('pac_sidebar_open')
-    if (savedWidth) setSidebarWidth(Number(savedWidth))
-    if (savedOpen !== null) setIsSidebarOpen(savedOpen === 'true')
-    setIsMounted(true)
-  }, [])
-
-  // Sync state to localStorage when changed
+  // Sync state to cookies when changed, so server gets it next hard-refresh
   useEffect(() => {
     if (isMounted) {
-      localStorage.setItem('pac_sidebar_width', String(sidebarWidth))
-      localStorage.setItem('pac_sidebar_open', String(isSidebarOpen))
+      document.cookie = `pac_sidebar_width=${sidebarWidth}; path=/; max-age=31536000`
+      document.cookie = `pac_sidebar_open=${isSidebarOpen}; path=/; max-age=31536000`
+    } else {
+      setIsMounted(true)
     }
   }, [sidebarWidth, isSidebarOpen, isMounted])
   
