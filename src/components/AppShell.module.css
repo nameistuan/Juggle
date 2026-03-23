@@ -256,45 +256,43 @@
   position: relative;
 }
 
-/* Floating Nano Arrows for 1-day jumps */
+/* Phantom Vertical Bars for 1-day jumps */
 .floatingArrow {
   position: absolute;
-  top: calc(50% + 25px); /* Offset below the 50px topbar */
-  transform: translateY(-50%);
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  background-color: var(--surface-color);
-  border: 1px solid var(--border-color);
+  top: 50px; /* Sit perfectly below the sleek topbar */
+  bottom: 0; /* Anchor to the bottom of the grid */
+  width: 48px; /* A comfortably thick clickable strip */
+  background-color: transparent; /* Totally invisible base */
+  border: none;
   color: var(--text-secondary);
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
   transition: all 0.2s ease;
   z-index: 50;
-  opacity: 0; 
-  pointer-events: none; 
+  opacity: 0; /* Hidden natively */
 }
 
-.mainContent:hover .floatingArrow {
-  opacity: 0.25;
-  pointer-events: auto;
-}
-
-.mainContent .floatingArrow:hover {
-  opacity: 1 !important;
+/* Hovering DIRECTLY on the phantom bar reveals it */
+.floatingArrow:hover {
+  opacity: 1;
+  background-color: var(--grid-border); /* Solidify the bar */
   color: var(--text-primary);
-  background-color: var(--grid-border);
-  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
-  transform: translateY(-50%) scale(1.1);
 }
 
 .floatingArrowLeft {
-  left: 1.5rem;
+  left: 0;
+  border-right: 1px solid transparent;
+}
+.floatingArrowLeft:hover {
+  border-right: 1px solid var(--border-color);
 }
 
 .floatingArrowRight {
-  right: 2rem; /* Leave room for native scrollbars */
+  right: 12px; /* Leave space for the OS vertical scrollbar */
+  border-left: 1px solid transparent;
+}
+.floatingArrowRight:hover {
+  border-left: 1px solid var(--border-color);
 }
