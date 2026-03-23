@@ -9,7 +9,25 @@ import EventModal from './EventModal'
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const [sidebarWidth, setSidebarWidth] = useState(250)
   const [isSidebarOpen, setIsSidebarOpen] = useState(true)
+  const [isMounted, setIsMounted] = useState(false)
   const [isEventModalOpen, setIsEventModalOpen] = useState(false)
+  
+  // Hydrate from localStorage on mount
+  useEffect(() => {
+    const savedWidth = localStorage.getItem('pac_sidebar_width')
+    const savedOpen = localStorage.getItem('pac_sidebar_open')
+    if (savedWidth) setSidebarWidth(Number(savedWidth))
+    if (savedOpen !== null) setIsSidebarOpen(savedOpen === 'true')
+    setIsMounted(true)
+  }, [])
+
+  // Sync state to localStorage when changed
+  useEffect(() => {
+    if (isMounted) {
+      localStorage.setItem('pac_sidebar_width', String(sidebarWidth))
+      localStorage.setItem('pac_sidebar_open', String(isSidebarOpen))
+    }
+  }, [sidebarWidth, isSidebarOpen, isMounted])
   
   const searchParams = useSearchParams()
   const router = useRouter()
