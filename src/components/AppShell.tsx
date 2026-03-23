@@ -126,22 +126,10 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                 </svg>
               </button>
             </div>
-            <div className={styles.viewToggle}>
-              <button 
-                className={`${styles.toggleBtn} ${pathname === '/' ? styles.active : ''}`}
-                onClick={() => router.push('/')}
-              >Month</button>
-              <button 
-                className={`${styles.toggleBtn} ${pathname === '/week' ? styles.active : ''}`}
-                onClick={() => router.push('/week')}
-              >Week</button>
-              <button 
-                className={`${styles.toggleBtn} ${pathname === '/day' ? styles.active : ''}`}
-                onClick={() => router.push('/day')}
-              >Day</button>
-            </div>
             
             <h2 className={styles.displayDate}>{displayDate}</h2>
+            
+            <div className={styles.viewToggle}>
           </div>
           <button className={styles.addButton} onClick={() => setIsEventModalOpen(true)}>+ New Event</button>
         </header>
