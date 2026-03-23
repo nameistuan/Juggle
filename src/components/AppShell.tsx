@@ -126,6 +126,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                 </svg>
               </button>
             </div>
+            
             <h2 className={styles.displayDate}>{displayDate}</h2>
             
             <div className={styles.viewToggle}>

@@ -151,7 +151,6 @@
   font-weight: 600;
   color: var(--text-primary);
   letter-spacing: -0.02em;
-  margin-left: 1rem;
 }
 
 .todayBtn {
@@ -164,8 +163,6 @@
   border-radius: 9999px;
   cursor: pointer;
   transition: all 0.2s ease;
-  margin-left: 0.5rem;
-  margin-right: 1.5rem;
 }
 
 .todayBtn:hover {
