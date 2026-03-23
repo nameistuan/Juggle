@@ -84,6 +84,36 @@ export default function AppShell({
     router.push(`${pathname}?date=${format(next, 'yyyy-MM-dd')}`)
   }
   
+  const handlePrevDay = () => router.push(`${pathname}?date=${format(subDays(currentDate, 1), 'yyyy-MM-dd')}`)
+  const handleNextDay = () => router.push(`${pathname}?date=${format(addDays(currentDate, 1), 'yyyy-MM-dd')}`)
+
+  const latestRefs = useRef({ currentDate, pathname, isEventModalOpen })
+  useEffect(() => {
+    latestRefs.current = { currentDate, pathname, isEventModalOpen }
+  }, [currentDate, pathname, isEventModalOpen])
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const { currentDate: cDate, pathname: pName, isEventModalOpen: isModal } = latestRefs.current
+      if (document.activeElement && ['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) return
+      if (isModal) return
+
+      if (e.key === 'ArrowLeft') {
+        let prev = cDate
+        if (pName === '/') prev = subMonths(cDate, 1)
+        else prev = subDays(cDate, 1)
+        router.push(`${pName}?date=${format(prev, 'yyyy-MM-dd')}`)
+      } else if (e.key === 'ArrowRight') {
+        let next = cDate
+        if (pName === '/') next = addMonths(cDate, 1)
+        else next = addDays(cDate, 1)
+        router.push(`${pName}?date=${format(next, 'yyyy-MM-dd')}`)
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [router])
+  
   const isResizing = useRef(false)
 
   const startResizing = () => {
@@ -207,6 +237,28 @@ export default function AppShell({
         <div className={styles.pageContent}>
           {children}
         </div>
+
+        {/* Floating Chevrons for 1-day micro-navigation */}
+        {pathname !== '/' && (
+          <>
+            <button 
+              className={`${styles.floatingArrow} ${styles.floatingArrowLeft}`}
+              onClick={handlePrevDay}
+            >
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+              </svg>
+            </button>
+            <button 
+              className={`${styles.floatingArrow} ${styles.floatingArrowRight}`}
+              onClick={handleNextDay}
+            >
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+          </>
+        )}
       </div>
 
       {isEventModalOpen && <EventModal onClose={() => setIsEventModalOpen(false)} />}

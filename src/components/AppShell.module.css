@@ -108,6 +108,7 @@
   flex-direction: column;
   background-color: var(--background-color);
   overflow: hidden;
+  position: relative;
 }
 
 .topbar {
@@ -253,4 +254,47 @@
   flex-grow: 1;
   overflow-y: auto;
   position: relative;
+}
+
+/* Floating Nano Arrows for 1-day jumps */
+.floatingArrow {
+  position: absolute;
+  top: calc(50% + 25px); /* Offset below the 50px topbar */
+  transform: translateY(-50%);
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background-color: var(--surface-color);
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  transition: all 0.2s ease;
+  z-index: 50;
+  opacity: 0; 
+  pointer-events: none; 
+}
+
+.mainContent:hover .floatingArrow {
+  opacity: 0.25;
+  pointer-events: auto;
+}
+
+.mainContent .floatingArrow:hover {
+  opacity: 1 !important;
+  color: var(--text-primary);
+  background-color: var(--grid-border);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+  transform: translateY(-50%) scale(1.1);
+}
+
+.floatingArrowLeft {
+  left: 1.5rem;
+}
+
+.floatingArrowRight {
+  right: 2rem; /* Leave room for native scrollbars */
 }
