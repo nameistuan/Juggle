@@ -34,10 +34,10 @@
 }
 
 .dayNumber {
-  font-size: 0.95rem;
+  font-size: 0.85rem;
   font-weight: 400;
-  width: 28px;
-  height: 28px;
+  width: 24px;
+  height: 24px;
   display: flex;
   align-items: center;
   justify-content: center;

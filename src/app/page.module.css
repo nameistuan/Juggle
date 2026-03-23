@@ -64,11 +64,11 @@
 }
 
 .dateNumber {
-  font-size: 0.85rem;
+  font-size: 0.75rem;
   font-weight: 400;
   color: var(--text-primary);
-  width: 24px;
-  height: 24px;
+  width: 22px;
+  height: 22px;
   display: flex;
   align-items: center;
   justify-content: center;
