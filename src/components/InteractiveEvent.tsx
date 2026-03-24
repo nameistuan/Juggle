@@ -27,6 +27,11 @@ export default function InteractiveEvent({
   const startY = useRef(0)
   const startHeight = useRef(height)
 
+  const isLessThanHour = dragHeight < 50
+  const is15Min = dragHeight <= 16
+
+  const linkPadding = is15Min ? '0 0.15rem' : '0.25rem 0.5rem'
+
   // Sync internal drag height if server pushes a prop update
   useEffect(() => {
     setDragHeight(height)
@@ -152,8 +157,9 @@ export default function InteractiveEvent({
         userSelect: 'none',
         borderRadius: '4px',
         overflow: 'hidden',
-        fontSize: '0.75rem',
-        lineHeight: 1.2
+        fontSize: is15Min ? '0.65rem' : '0.75rem',
+        lineHeight: 1.2,
+        padding: is15Min ? '0px 4px' : undefined
       }}
       draggable
       onDragStart={handleDragStart}
@@ -162,13 +168,24 @@ export default function InteractiveEvent({
       <Link 
         href={href} 
         scroll={false} 
-        style={{ display: 'block', height: '100%', width: '100%', color: 'inherit', textDecoration: 'none', padding: '0.25rem 0.5rem' }}
+        style={{ 
+          display: 'flex', 
+          flexDirection: isLessThanHour ? 'row' : 'column',
+          alignItems: isLessThanHour ? 'center' : 'flex-start',
+          gap: isLessThanHour ? '4px' : '0',
+          height: '100%', 
+          width: '100%', 
+          color: 'inherit', 
+          textDecoration: 'none', 
+          padding: linkPadding,
+          overflow: 'hidden'
+        }}
         draggable={false} // don't trigger native Link ghost drags concurrently
       >
-        <div style={{ fontWeight: 600, marginBottom: '2px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{event.title}</div>
-        <div style={{ opacity: 0.8 }}>
+        <div style={{ fontWeight: 600, flexShrink: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{event.title}</div>
+        <div style={{ opacity: 0.8, minWidth: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
           {format(new Date(event.startTime), 'h:mm a')} 
-          {event.endTime && ` - ${format(new Date(event.endTime), 'h:mm a')}`}
+          {!isLessThanHour && event.endTime && ` - ${format(new Date(event.endTime), 'h:mm a')}`}
         </div>
       </Link>
       

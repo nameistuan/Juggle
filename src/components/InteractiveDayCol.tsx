@@ -10,6 +10,10 @@ export default function InteractiveDayCol({ dateStr, className, children }: { da
   const [previewHeight, setPreviewHeight] = useState<number>(51)
   const [isPendingDrop, setIsPendingDrop] = useState(false)
 
+  const isLessThanHour = previewHeight < 50
+  const is15Min = previewHeight <= 16
+  const linkPadding = is15Min ? '0 0.15rem' : '0.25rem 0.5rem'
+
   // Wait rigorously for Next.js to fire a fresh layout payload containing the authentic Server Component element before collapsing our client-side snapshot model!
   useEffect(() => {
     if (isPendingDrop) {
@@ -114,19 +118,28 @@ export default function InteractiveDayCol({ dateStr, className, children }: { da
             pointerEvents: 'none',
             zIndex: 100,
             overflow: 'hidden',
-            fontSize: '0.75rem',
+            fontSize: is15Min ? '0.65rem' : '0.75rem',
             lineHeight: 1.2,
-            padding: '4px 6px', // Matches .eventBlock CSS exact box-model
+            padding: is15Min ? '0px 4px' : '4px 6px', // Matches .eventBlock CSS exact box-model
             display: 'flex',
             flexDirection: 'column'
           }}
         >
           {/* Internal padding node structured exactly to mimic the <Link> bounds on standard blocks */}
-          <div style={{ display: 'block', height: '100%', width: '100%', padding: '0.25rem 0.5rem' }}>
-            <div style={{ fontWeight: 600, marginBottom: '2px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+          <div style={{ 
+            display: 'flex', 
+            flexDirection: isLessThanHour ? 'row' : 'column',
+            alignItems: isLessThanHour ? 'center' : 'flex-start',
+            gap: isLessThanHour ? '4px' : '0',
+            height: '100%', 
+            width: '100%', 
+            padding: linkPadding,
+            overflow: 'hidden'
+          }}>
+            <div style={{ fontWeight: 600, flexShrink: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
               {(window as any).__activeDragTitle}
             </div>
-            <div style={{ opacity: 0.8 }}>
+            <div style={{ opacity: 0.8, minWidth: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
               {(window as any).__activeDragTime}
             </div>
           </div>
