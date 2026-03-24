@@ -56,8 +56,15 @@ export default function InteractiveEvent({
     // Globally register internal telemetry because Chrome explicitly locks dataTransfer reads securely until the exact moment of 'drop'
     ;(window as any).__activeDragOffsetY = dragOffsetY
     ;(window as any).__activeDragDuration = durationMs
+    ;(window as any).__activeDragTitle = event.title
+    ;(window as any).__activeDragColor = event.project ? event.project.color : null
     
-    // Completely hide the native item natively leaving only the floating 'held' ghost
+    // Natively override the browser OS ghost graphic out of the layout rendering
+    const blankImg = new Image()
+    blankImg.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'
+    e.dataTransfer.setDragImage(blankImg, 0, 0)
+    
+    // Completely hide the native item initially
     setTimeout(() => {
       if (blockRef.current) blockRef.current.style.opacity = '0'
     }, 0)
@@ -67,6 +74,8 @@ export default function InteractiveEvent({
     if (blockRef.current) blockRef.current.style.opacity = '1'
     ;(window as any).__activeDragOffsetY = null
     ;(window as any).__activeDragDuration = null
+    ;(window as any).__activeDragTitle = null
+    ;(window as any).__activeDragColor = null
   }
 
   const handlePointerDown = (e: React.PointerEvent) => {

@@ -92,17 +92,24 @@ export default function InteractiveDayCol({ dateStr, className, children }: { da
           style={{
             position: 'absolute',
             top: `${previewY}px`,
-            left: '5px',
-            right: '5px',
+            left: '0px',
+            width: 'calc(100% - 10px)',
             height: `${previewHeight}px`,
-            backgroundColor: 'rgba(79, 70, 229, 0.1)',
-            border: '2px solid var(--primary-color)',
-            borderRadius: '6px',
+            backgroundColor: (window as any).__activeDragColor ? `${(window as any).__activeDragColor}33` : 'var(--surface-hover)',
+            color: (window as any).__activeDragColor || 'var(--text-primary)',
+            borderLeft: `4px solid ${(window as any).__activeDragColor || 'var(--border-color)'}`,
+            borderRadius: '4px',
             pointerEvents: 'none', // Strictly prevent ghost from bubbling drop logic
             zIndex: 100,
-            transition: 'top 0.05s ease-out' // Micro-smoothing filter for the 15m structural jumps
+            overflow: 'hidden',
+            padding: '0.25rem 0.5rem',
+            // transition: 'top 0.05s ease-out' // Removed micro-smoothing so it rigidly clicks block-by-block exactly as ordered
           }}
-        />
+        >
+          <div style={{ fontWeight: 600, fontSize: '0.75rem', lineHeight: 1.2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            {(window as any).__activeDragTitle}
+          </div>
+        </div>
       )}
       {children}
     </div>
