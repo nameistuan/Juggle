@@ -7,6 +7,8 @@ import {
   parseISO
 } from 'date-fns'
 import Link from 'next/link'
+import InteractiveDayCol from '@/components/InteractiveDayCol'
+import InteractiveEvent from '@/components/InteractiveEvent'
 
 export const dynamic = 'force-dynamic' 
 
@@ -79,36 +81,30 @@ export default async function DayView({
         <div className={styles.daysContainer} style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
           {daysInGrid.map(day => {
             const dayEvents = events.filter((e: any) => format(e.startTime, 'yyyy-MM-dd') === format(day, 'yyyy-MM-dd'))
+            const dateStr = format(day, 'yyyy-MM-dd')
 
             return (
-              <div key={day.toISOString()} className={styles.dayCol}>
+              <InteractiveDayCol key={day.toISOString()} dateStr={dateStr} className={styles.dayCol}>
                 {dayEvents.map((event: any) => {
                   const startHour = event.startTime.getHours()
                   const startMin = event.startTime.getMinutes()
                   
+                  const durationMs = event.endTime ? new Date(event.endTime).getTime() - event.startTime.getTime() : 3600000
                   const top = (startHour * 51) + (startMin * (51 / 60))
-                  const height = 51
+                  const height = (durationMs / 3600000) * 51
 
                   return (
-                    <Link 
+                    <InteractiveEvent
+                      key={event.id}
+                      event={event}
                       href={getEventUrl(event.id)}
-                      scroll={false}
-                      key={event.id} 
+                      top={top}
+                      height={height}
                       className={styles.eventBlock}
-                      style={{
-                        top: `${top}px`,
-                        height: `${height}px`,
-                        backgroundColor: event.project ? `${event.project.color}33` : 'var(--surface-hover)',
-                        color: event.project ? event.project.color : 'var(--text-primary)',
-                        borderLeft: `4px solid ${event.project ? event.project.color : 'var(--border-color)'}`
-                      }}
-                    >
-                      <span className={styles.eventTitle}>{event.title}</span>
-                      <span className={styles.eventTime}>{format(event.startTime, 'h:mm a')}</span>
-                    </Link>
+                    />
                   )
                 })}
-              </div>
+              </InteractiveDayCol>
             )
           })}
         </div>

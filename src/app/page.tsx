@@ -12,6 +12,8 @@ import {
   parseISO
 } from 'date-fns'
 import Link from 'next/link'
+import InteractiveMonthCell from '@/components/InteractiveMonthCell'
+import InteractiveMonthEvent from '@/components/InteractiveMonthEvent'
 
 export const dynamic = 'force-dynamic' // Ensure Next.js doesn't cache the real-time calendar during MVP
 
@@ -86,9 +88,13 @@ export default async function MonthView({
   return (
     <div className={styles.monthView}>
       <div className={styles.calendarGrid}>
-        {calendarDays.map((day, index) => (
-          <div 
+        {calendarDays.map((day, index) => {
+          const dateStr = format(day.dateObj, 'yyyy-MM-dd')
+          
+          return (
+          <InteractiveMonthCell 
             key={index} 
+            dateStr={dateStr}
             className={`
               ${styles.dayCell} 
               ${day.isToday ? styles.today : ''} 
@@ -106,25 +112,19 @@ export default async function MonthView({
             
             <div className={styles.eventsContainer}>
               {day.events.map((event: any) => (
-                <Link 
-                  href={getEventUrl(event.id)} 
-                  scroll={false} 
-                  key={event.id} 
+                <InteractiveMonthEvent
+                  key={event.id}
+                  event={event}
+                  href={getEventUrl(event.id)}
                   className={styles.eventBadge}
-                >
-                  <div 
-                    className={styles.eventDot} 
-                    style={{ backgroundColor: event.project ? event.project.color : 'var(--text-secondary)' }}
-                  />
-                  <span className={styles.eventTime}>
-                    {format(new Date(event.startTime), 'h:mma').toLowerCase()}
-                  </span>
-                  <span className={styles.eventTitle}>{event.title}</span>
-                </Link>
+                  dotClassName={styles.eventDot}
+                  timeClassName={styles.eventTime}
+                  titleClassName={styles.eventTitle}
+                />
               ))}
             </div>
-          </div>
-        ))}
+          </InteractiveMonthCell>
+        )})}
       </div>
     </div>
   )
