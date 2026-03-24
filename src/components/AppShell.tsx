@@ -163,36 +163,39 @@ export default function AppShell({
 
   return (
     <div className={styles.appContainer}>
-      {/* Sidebar - Conditional Rendering */}
-      {isSidebarOpen && (
-        <>
-          <aside className={styles.sidebar} style={{ width: `${sidebarWidth}px` }}>
-            <div className={styles.sidebarHeader}>
-              <h1 className={styles.logo}>PAC</h1>
-            </div>
-            
-            <nav className={styles.sidebarNav}>
-              {/* Project Boards will be mapped here later */}
-              <div className={styles.navSection}>
-                <h3 className={styles.sectionTitle}>My Courses</h3>
-                <ul className={styles.projectList}>
-                  <li className={styles.projectItem}>
-                    <span className={styles.colorDot} style={{backgroundColor: '#8F6B91'}}></span>
-                    Biology 101
-                  </li>
-                  <li className={styles.projectItem}>
-                    <span className={styles.colorDot} style={{backgroundColor: '#10b981'}}></span>
-                    Engineering
-                  </li>
-                </ul>
-              </div>
-            </nav>
-          </aside>
+      {/* Sidebar - Render continuously but compress width to 0px natively for animation */}
+      <aside 
+        className={`${styles.sidebar} ${!isSidebarOpen ? styles.sidebarClosed : ''}`} 
+        style={{ width: isSidebarOpen ? `${sidebarWidth}px` : '0px' }}
+      >
+        <div className={styles.sidebarHeader}>
+          <h1 className={styles.logo}>PAC</h1>
+        </div>
+        
+        <nav className={styles.sidebarNav}>
+          {/* Project Boards will be mapped here later */}
+          <div className={styles.navSection}>
+            <h3 className={styles.sectionTitle}>My Courses</h3>
+            <ul className={styles.projectList}>
+              <li className={styles.projectItem}>
+                <span className={styles.colorDot} style={{backgroundColor: '#8F6B91'}}></span>
+                Biology 101
+              </li>
+              <li className={styles.projectItem}>
+                <span className={styles.colorDot} style={{backgroundColor: '#10b981'}}></span>
+                Engineering
+              </li>
+            </ul>
+          </div>
+        </nav>
+      </aside>
 
-          {/* Interactive Resizer Handle */}
-          <div className={styles.resizer} onMouseDown={startResizing} />
-        </>
-      )}
+      {/* Interactive Resizer Handle */}
+      <div 
+        className={`${styles.resizer} ${!isSidebarOpen ? styles.resizerHidden : ''}`} 
+        onMouseDown={startResizing} 
+        style={{ pointerEvents: isSidebarOpen ? 'auto' : 'none' }}
+      />
 
       {/* Main Content Area */}
       <div className={styles.mainContent}>
@@ -247,7 +250,7 @@ export default function AppShell({
           </div>
         </header>
         
-        <div className={styles.pageContent}>
+        <div key={`${pathname}-${dateParam || monthParam || 'today'}`} className={styles.pageContent}>
           {children}
         </div>
 

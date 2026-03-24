@@ -13,6 +13,13 @@
   flex-direction: column;
   flex-shrink: 0;
   will-change: width;
+  transition: width 0.3s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.3s ease;
+  overflow: hidden;
+  white-space: nowrap; /* Prevents text flow crunches natively during transition */
+}
+
+.sidebarClosed {
+  border-right: 1px solid transparent; /* Hide visual boundaries when mathematically collapsed */
 }
 
 /* Interactive Resizer Handle */
@@ -30,6 +37,10 @@
 
 .resizer:hover, .resizer:active {
   background-color: var(--primary-color);
+}
+
+.resizerHidden {
+  opacity: 0;
 }
 
 .sidebarHeader {
@@ -254,6 +265,12 @@
   flex-grow: 1;
   overflow-y: auto;
   position: relative;
+  animation: contentFadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes contentFadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 /* Phantom Vertical Bars for 1-day jumps */
