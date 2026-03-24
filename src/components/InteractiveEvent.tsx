@@ -36,12 +36,19 @@ export default function InteractiveEvent({
       e.preventDefault()
       return
     }
+    
+    // Inject relative timescale data structurally into payload
+    const originalStartTime = new Date(event.startTime).getTime()
+    const originalEndTime = event.endTime ? new Date(event.endTime).getTime() : originalStartTime + 3600000
+    const durationMs = originalEndTime - originalStartTime
+
     e.dataTransfer.setData('eventId', event.id)
+    e.dataTransfer.setData('eventDurationMs', durationMs.toString())
     e.dataTransfer.effectAllowed = 'move'
     
-    // Make the original temporarily invisible natively during flight
+    // Completely hide the native item natively leaving only the floating 'held' ghost
     setTimeout(() => {
-      if (blockRef.current) blockRef.current.style.opacity = '0.4'
+      if (blockRef.current) blockRef.current.style.opacity = '0'
     }, 0)
   }
 
@@ -50,6 +57,7 @@ export default function InteractiveEvent({
   }
 
   const handlePointerDown = (e: React.PointerEvent) => {
+    e.preventDefault() // Prevents native HTML5 drag-and-drop ghosting conflict
     e.stopPropagation()
     isResizing.current = true
     startY.current = e.clientY
@@ -62,8 +70,13 @@ export default function InteractiveEvent({
   const handlePointerMove = (e: PointerEvent) => {
     if (!isResizing.current) return
     const deltaY = e.clientY - startY.current
-    let newHeight = startHeight.current + deltaY
-    if (newHeight < 15) newHeight = 15 // Min visual height
+    
+    // Snap cleanly to 15-minute intervals (51px / 4 = 12.75px)
+    const snappedDeltaY = Math.round(deltaY / 12.75) * 12.75
+    
+    let newHeight = startHeight.current + snappedDeltaY
+    if (newHeight < 12.75) newHeight = 12.75 // absolute min 15 mins
+    
     setDragHeight(newHeight)
   }
 
@@ -72,8 +85,8 @@ export default function InteractiveEvent({
     document.removeEventListener('pointermove', handlePointerMove)
     document.removeEventListener('pointerup', handlePointerUp)
     
-    // Calculate new duration natively against the original start time
-    const newDurationMins = (dragHeight / 51) * 60
+    // Calculate new duration snapped strictly to 15 minute granular boundaries
+    const newDurationMins = Math.round((dragHeight / 51) * 60)
     const newEndTime = new Date(new Date(event.startTime).getTime() + newDurationMins * 60000)
 
     try {

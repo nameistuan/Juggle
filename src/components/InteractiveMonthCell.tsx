@@ -25,19 +25,26 @@ export default function InteractiveMonthCell({
     
     const eventId = e.dataTransfer.getData('eventId')
     const eventStartTime = e.dataTransfer.getData('eventStartTime')
+    const eventDurationMsRaw = e.dataTransfer.getData('eventDurationMs') // Also bind duration natively for integrity
     if (!eventId || !eventStartTime) return
     
+    const durationMs = eventDurationMsRaw ? parseInt(eventDurationMsRaw) : 3600000
+
     // Extract original time components to preserve intra-day fidelity when dragging across months
     const originalDate = new Date(eventStartTime)
     const [yyyy, mm, dd] = dateStr.split('-').map(Number)
     
-    const dropDate = new Date(yyyy, mm - 1, dd, originalDate.getHours(), originalDate.getMinutes(), 0)
+    const dropStartDate = new Date(yyyy, mm - 1, dd, originalDate.getHours(), originalDate.getMinutes(), 0)
+    const dropEndDate = new Date(dropStartDate.getTime() + durationMs)
 
     try {
       await fetch(`/api/events/${eventId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ startTime: dropDate.toISOString() })
+        body: JSON.stringify({ 
+          startTime: dropStartDate.toISOString(),
+          endTime: dropEndDate.toISOString()
+        })
       })
       router.refresh()
     } catch (err) {
