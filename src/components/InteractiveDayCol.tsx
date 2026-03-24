@@ -115,7 +115,10 @@ export default function InteractiveDayCol({ dateStr, className, children }: { da
             zIndex: 100,
             overflow: 'hidden',
             fontSize: '0.75rem',
-            lineHeight: 1.2
+            lineHeight: 1.2,
+            padding: '4px 6px', // Matches .eventBlock CSS exact box-model
+            display: 'flex',
+            flexDirection: 'column'
           }}
         >
           {/* Internal padding node structured exactly to mimic the <Link> bounds on standard blocks */}
