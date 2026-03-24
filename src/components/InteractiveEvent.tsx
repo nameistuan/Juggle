@@ -59,6 +59,11 @@ export default function InteractiveEvent({
     ;(window as any).__activeDragTitle = event.title
     ;(window as any).__activeDragColor = event.project ? event.project.color : null
     
+    // Pass precise static typography to identically match original visual node
+    const startTimeStr = format(new Date(event.startTime), 'h:mm a')
+    const endTimeStr = event.endTime ? ` - ${format(new Date(event.endTime), 'h:mm a')}` : ''
+    ;(window as any).__activeDragTime = startTimeStr + endTimeStr
+    
     // Natively override the browser OS ghost graphic out of the layout rendering
     const blankImg = new Image()
     blankImg.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'
@@ -76,6 +81,7 @@ export default function InteractiveEvent({
     ;(window as any).__activeDragDuration = null
     ;(window as any).__activeDragTitle = null
     ;(window as any).__activeDragColor = null
+    ;(window as any).__activeDragTime = null
   }
 
   const handlePointerDown = (e: React.PointerEvent) => {

@@ -103,11 +103,16 @@ export default function InteractiveDayCol({ dateStr, className, children }: { da
             zIndex: 100,
             overflow: 'hidden',
             padding: '0.25rem 0.5rem',
+            fontSize: '0.75rem',
+            lineHeight: 1.2
             // transition: 'top 0.05s ease-out' // Removed micro-smoothing so it rigidly clicks block-by-block exactly as ordered
           }}
         >
-          <div style={{ fontWeight: 600, fontSize: '0.75rem', lineHeight: 1.2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+          <div style={{ fontWeight: 600, marginBottom: '2px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
             {(window as any).__activeDragTitle}
+          </div>
+          <div style={{ opacity: 0.8 }}>
+            {(window as any).__activeDragTime}
           </div>
         </div>
       )}
