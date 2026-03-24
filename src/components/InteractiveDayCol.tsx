@@ -103,13 +103,14 @@ export default function InteractiveDayCol({ dateStr, className, children }: { da
           style={{
             position: 'absolute',
             top: `${previewY}px`,
-            left: '5px',
-            width: 'calc(100% - 10px)',
+            left: '2px', // Accurately matched to static .eventBlock
+            width: 'calc(100% - 8px)',
             height: `${previewHeight}px`,
             backgroundColor: (window as any).__activeDragColor ? `${(window as any).__activeDragColor}33` : 'var(--surface-hover)',
             color: (window as any).__activeDragColor || 'var(--text-primary)',
             borderLeft: `4px solid ${(window as any).__activeDragColor || 'var(--border-color)'}`,
             borderRadius: '4px',
+            boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.1)', // Replicate the exact border outline natively
             pointerEvents: 'none',
             zIndex: 100,
             overflow: 'hidden',
