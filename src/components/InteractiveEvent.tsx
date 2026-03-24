@@ -53,6 +53,10 @@ export default function InteractiveEvent({
     e.dataTransfer.setData('dragOffsetY', dragOffsetY.toString())
     e.dataTransfer.effectAllowed = 'move'
     
+    // Globally register internal telemetry because Chrome explicitly locks dataTransfer reads securely until the exact moment of 'drop'
+    ;(window as any).__activeDragOffsetY = dragOffsetY
+    ;(window as any).__activeDragDuration = durationMs
+    
     // Completely hide the native item natively leaving only the floating 'held' ghost
     setTimeout(() => {
       if (blockRef.current) blockRef.current.style.opacity = '0'
@@ -61,6 +65,8 @@ export default function InteractiveEvent({
 
   const handleDragEnd = (e: React.DragEvent) => {
     if (blockRef.current) blockRef.current.style.opacity = '1'
+    ;(window as any).__activeDragOffsetY = null
+    ;(window as any).__activeDragDuration = null
   }
 
   const handlePointerDown = (e: React.PointerEvent) => {
