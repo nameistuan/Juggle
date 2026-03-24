@@ -76,7 +76,11 @@ export default function InteractiveEvent({
   }
 
   const handleDragEnd = (e: React.DragEvent) => {
-    if (blockRef.current) blockRef.current.style.opacity = '1'
+    // If the browser natively aborted the drag, restore transparency
+    if (e.dataTransfer.dropEffect === 'none') {
+      if (blockRef.current) blockRef.current.style.opacity = '1'
+    }
+    
     ;(window as any).__activeDragOffsetY = null
     ;(window as any).__activeDragDuration = null
     ;(window as any).__activeDragTitle = null

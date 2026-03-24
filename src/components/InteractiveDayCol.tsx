@@ -1,6 +1,6 @@
 'use client'
 
-import React, { ReactNode, useState } from 'react'
+import React, { ReactNode, useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 
 export default function InteractiveDayCol({ dateStr, className, children }: { dateStr: string, className: string, children: ReactNode }) {
@@ -8,6 +8,15 @@ export default function InteractiveDayCol({ dateStr, className, children }: { da
   
   const [previewY, setPreviewY] = useState<number | null>(null)
   const [previewHeight, setPreviewHeight] = useState<number>(51)
+  const [isPendingDrop, setIsPendingDrop] = useState(false)
+
+  // Wait rigorously for Next.js to fire a fresh layout payload containing the authentic Server Component element before collapsing our client-side snapshot model!
+  useEffect(() => {
+    if (isPendingDrop) {
+      setPreviewY(null)
+      setIsPendingDrop(false)
+    }
+  }, [children])
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault()
@@ -31,18 +40,21 @@ export default function InteractiveDayCol({ dateStr, className, children }: { da
   }
 
   const handleDragLeave = (e: React.DragEvent) => {
-    // We only want to clear if the mouse truly leaves the column bounding box natively
-    setPreviewY(null)
+    if (!isPendingDrop) {
+      setPreviewY(null)
+    }
   }
 
   const handleDrop = async (e: React.DragEvent) => {
     e.preventDefault()
-    setPreviewY(null) // Clear structural ghost projection instantly
     
     const eventId = e.dataTransfer.getData('eventId')
     const durationMsRaw = e.dataTransfer.getData('eventDurationMs')
     const dragOffsetYRaw = e.dataTransfer.getData('dragOffsetY')
     if (!eventId) return
+    
+    // Freeze the structural preview exactly where it was dropped (Zero-Latency Optimistic UI)
+    setIsPendingDrop(true)
     
     const durationMs = durationMsRaw ? parseInt(durationMsRaw) : 3600000 // default 1hr fallback
     const dragOffsetY = dragOffsetYRaw ? parseFloat(dragOffsetYRaw) : 0
