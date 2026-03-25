@@ -1,10 +1,11 @@
 'use client'
 
-import React, { ReactNode, useState, useEffect, startTransition } from 'react'
+import React, { ReactNode, useState, useEffect, useRef, startTransition } from 'react'
 import { useRouter } from 'next/navigation'
 
 export default function InteractiveDayCol({ dateStr, className, children }: { dateStr: string, className: string, children: ReactNode }) {
   const router = useRouter()
+  const colRef = useRef<HTMLDivElement>(null)
   
   const [previewY, setPreviewY] = useState<number | null>(null)
   const [previewHeight, setPreviewHeight] = useState<number>(51)
@@ -31,7 +32,6 @@ export default function InteractiveDayCol({ dateStr, className, children }: { da
     e.preventDefault()
     e.dataTransfer.dropEffect = 'move'
     
-    // Extrapolate bounding variables structurally from the global bus for active drag-preview projection
     const dragOffsetY = (window as any).__activeDragOffsetY || 0
     const dragDurationMs = (window as any).__activeDragDuration || 3600000
     
@@ -62,20 +62,16 @@ export default function InteractiveDayCol({ dateStr, className, children }: { da
     const dragOffsetYRaw = e.dataTransfer.getData('dragOffsetY')
     if (!eventId) return
     
-    // Freeze the structural preview exactly where it was dropped (Zero-Latency Optimistic UI)
     setIsPendingDrop(true)
     
-    const durationMs = durationMsRaw ? parseInt(durationMsRaw) : 3600000 // default 1hr fallback
+    const durationMs = durationMsRaw ? parseInt(durationMsRaw) : 3600000
     const dragOffsetY = dragOffsetYRaw ? parseFloat(dragOffsetYRaw) : 0
     
-    // Determine accurate drop location visually bound to the exact TOP edge of the element, NOT the cursor!
     const colRect = (e.currentTarget as HTMLElement).getBoundingClientRect()
     let y = e.clientY - colRect.top - dragOffsetY
-    if (y < 0) y = 0 // Prevent negative top edge mappings
+    if (y < 0) y = 0
     
     const minutesLayout = (y / 51) * 60
-    
-    // Mathematically round bounds to nearest 15 mins for intuitive magnetic snapping
     const totalMinutesSnapped = Math.round(minutesLayout / 15) * 15
     const snappedHour = Math.floor(totalMinutesSnapped / 60)
     const snappedMin = totalMinutesSnapped % 60
@@ -93,39 +89,44 @@ export default function InteractiveDayCol({ dateStr, className, children }: { da
           endTime: dropEndDate.toISOString()
         })
       })
-      // Server-bound data has shifted! Trigger silent Next.js soft refresh inside transition for high-FPS UI metric!
       startTransition(() => {
         router.refresh()
       })
     } catch (err) {
-      console.error("Failed to execute DND movement mathematically.", err)
+      console.error("Failed to execute DND movement.", err)
     }
   }
 
   const handleMouseDown = (e: React.MouseEvent) => {
-    // Only start if clicking the background directly
-    if (e.target !== e.currentTarget) return
+    // Don't start if clicking on an event block (walk up from target to find data-event-block)
+    let el = e.target as HTMLElement | null
+    while (el && el !== e.currentTarget) {
+      if (el.getAttribute('data-event-block') === 'true') return
+      el = el.parentElement
+    }
     
-    const colRect = (e.currentTarget as HTMLElement).getBoundingClientRect()
+    // Prevent text selection and default drag
+    e.preventDefault()
+    
+    if (!colRef.current) return
+    const colRect = colRef.current.getBoundingClientRect()
     const y = e.clientY - colRect.top
     
-    // Snap to 15m grid
     const minutesLayout = (y / 51) * 60
     const totalMinutesSnapped = Math.floor(minutesLayout / 15) * 15
     const snappedPixelY = (totalMinutesSnapped / 60) * 51
     
     setIsCreating(true)
     setCreateStartTop(snappedPixelY)
-    setCreateCurrentTop(snappedPixelY + 51 / 4) // Initial 15m block height
+    setCreateCurrentTop(snappedPixelY + 51 / 4)
   }
 
   useEffect(() => {
     if (!isCreating) return
 
     const handleMouseMove = (e: MouseEvent) => {
-      const col = document.querySelector(`.${className.split(' ').join('.')}`)
-      if (!col) return
-      const colRect = col.getBoundingClientRect()
+      if (!colRef.current) return
+      const colRect = colRef.current.getBoundingClientRect()
       const y = e.clientY - colRect.top
       
       const minutesLayout = (y / 51) * 60
@@ -139,7 +140,7 @@ export default function InteractiveDayCol({ dateStr, className, children }: { da
       if (createStartTop !== null && createCurrentTop !== null) {
         const top = Math.min(createStartTop, createCurrentTop)
         const bottom = Math.max(createStartTop, createCurrentTop)
-        const durationPx = Math.max(bottom - top, 51 / 4) // Min 15 mins
+        const durationPx = Math.max(bottom - top, 51 / 4)
 
         const startMinutes = (top / 51) * 60
         const endMinutes = startMinutes + (durationPx / 51) * 60
@@ -173,19 +174,19 @@ export default function InteractiveDayCol({ dateStr, className, children }: { da
       window.removeEventListener('mousemove', handleMouseMove)
       window.removeEventListener('mouseup', handleMouseUp)
     }
-  }, [isCreating, createStartTop, createCurrentTop, dateStr, router, className])
+  }, [isCreating, createStartTop, createCurrentTop, dateStr, router])
 
   const drawTop = createStartTop !== null && createCurrentTop !== null ? Math.min(createStartTop, createCurrentTop) : 0
   const drawHeight = createStartTop !== null && createCurrentTop !== null ? Math.max(Math.abs(createCurrentTop - createStartTop), 51 / 4) : 0
 
   return (
     <div 
+      ref={colRef}
       className={className} 
       onDragOver={handleDragOver} 
       onDragLeave={handleDragLeave} 
       onDrop={handleDrop}
       onMouseDown={handleMouseDown}
-      style={{ position: 'relative' }}
     >
       {isCreating && createStartTop !== null && (
         <div 
@@ -208,25 +209,24 @@ export default function InteractiveDayCol({ dateStr, className, children }: { da
           style={{
             position: 'absolute',
             top: `${previewY}px`,
-            left: '2px', // Accurately matched to static .eventBlock
+            left: '2px',
             width: 'calc(100% - 8px)',
             height: `${previewHeight}px`,
             backgroundColor: (window as any).__activeDragColor ? `${(window as any).__activeDragColor}33` : 'var(--surface-hover)',
             color: (window as any).__activeDragColor || 'var(--text-primary)',
             borderLeft: `4px solid ${(window as any).__activeDragColor || 'var(--border-color)'}`,
             borderRadius: '4px',
-            boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.1)', // Replicate the exact border outline natively
+            boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.1)',
             pointerEvents: 'none',
             zIndex: 100,
             overflow: 'hidden',
             fontSize: is15Min ? '0.65rem' : '0.75rem',
             lineHeight: 1.2,
-            padding: is15Min ? '0px 4px' : '4px 6px', // Matches .eventBlock CSS exact box-model
+            padding: is15Min ? '0px 4px' : '4px 6px',
             display: 'flex',
             flexDirection: 'column'
           }}
         >
-          {/* Internal padding node structured exactly to mimic the <Link> bounds on standard blocks */}
           <div style={{ 
             display: 'flex', 
             flexDirection: 'row',

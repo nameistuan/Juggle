@@ -155,6 +155,7 @@ export default function InteractiveEvent({
     <div 
       ref={blockRef}
       className={className}
+      data-event-block="true"
       style={{
         top: `${top}px`,
         height: `${dragHeight}px`,
