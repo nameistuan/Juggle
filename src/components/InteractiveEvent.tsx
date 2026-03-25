@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useRef, useState, useEffect } from 'react'
+import React, { useRef, useState, useEffect, startTransition } from 'react'
 import Link from 'next/link'
 import { format } from 'date-fns'
 import { useRouter } from 'next/navigation'
@@ -10,13 +10,19 @@ export default function InteractiveEvent({
   href, 
   top, 
   height,
-  className
+  className,
+  assignedLeft = '2px',
+  isLayoutIndented = false,
+  zIndex = 1
 }: { 
   event: any, 
   href: string, 
   top: number, 
   height: number,
-  className: string 
+  className: string,
+  assignedLeft?: string,
+  isLayoutIndented?: boolean,
+  zIndex?: number
 }) {
   const router = useRouter()
   const blockRef = useRef<HTMLDivElement>(null)
@@ -28,6 +34,7 @@ export default function InteractiveEvent({
   const startHeight = useRef(height)
 
   const isMoreThanHour = dragHeight > 55 // > 1 hr
+  const is30MinOrLess = dragHeight <= 27 // <= 30 mins
   const is15Min = dragHeight <= 16
 
   const linkPadding = is15Min ? '0 0.15rem' : '0.25rem 0.5rem'
@@ -39,6 +46,8 @@ export default function InteractiveEvent({
     // Forcefully restore visibility when the server pushes a newly positioned DND drop coordinate cleanly!
     if (blockRef.current) blockRef.current.style.opacity = '1'
   }, [height, top, event.startTime, event.endTime])
+
+
 
   const handleDragStart = (e: React.DragEvent) => {
     if (isResizing.current) {
@@ -135,7 +144,9 @@ export default function InteractiveEvent({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ endTime: newEndTime.toISOString() })
       })
-      router.refresh()
+      startTransition(() => {
+        router.refresh()
+      })
     } catch (err) {
       console.error("Failed to commit resize", err)
     }
@@ -149,10 +160,16 @@ export default function InteractiveEvent({
         top: `${top}px`,
         height: `${dragHeight}px`,
         position: 'absolute',
-        width: 'calc(100% - 10px)',
+        left: assignedLeft,
+        right: '4px',
+        zIndex: zIndex,
+        boxShadow: isLayoutIndented ? '0 0 0 1.5px var(--surface-color), 0 4px 6px rgba(0,0,0,0.15), 0 1px 3px rgba(0,0,0,0.1)' : 'none', // Cutout gap + shadow
         backgroundColor: event.project ? `${event.project.color}33` : 'var(--surface-hover)',
+        backdropFilter: isLayoutIndented ? 'blur(8px)' : 'none',
+        WebkitBackdropFilter: isLayoutIndented ? 'blur(8px)' : 'none',
         color: event.project ? event.project.color : 'var(--text-primary)',
         borderLeft: `4px solid ${event.project ? event.project.color : 'var(--border-color)'}`,
+        border: isLayoutIndented ? '1px solid var(--border-color)' : 'none',
         cursor: 'move',
         userSelect: 'none',
         borderRadius: '4px',
@@ -170,10 +187,10 @@ export default function InteractiveEvent({
         scroll={false} 
         style={{ 
           display: 'flex', 
-          flexDirection: 'row',
-          justifyContent: 'space-between',
+          flexDirection: is30MinOrLess ? 'row' : 'column',
+          justifyContent: 'flex-start',
           alignItems: 'flex-start',
-          gap: '6px',
+          gap: is30MinOrLess ? '4px' : '0px',
           height: '100%', 
           width: '100%', 
           color: 'inherit', 
@@ -183,10 +200,10 @@ export default function InteractiveEvent({
         }}
         draggable={false} // don't trigger native Link ghost drags concurrently
       >
-        <div style={{ fontWeight: 600, flexShrink: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+        <div style={{ fontWeight: 600, flexShrink: 0, maxWidth: '100%', minWidth: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
           {event.title}
         </div>
-        <div style={{ opacity: 0.8, flexShrink: 0, whiteSpace: 'nowrap' }}>
+        <div style={{ opacity: 0.8, flexShrink: 1, maxWidth: '100%', minWidth: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
           {format(new Date(event.startTime), 'h:mm a')} 
           {isMoreThanHour && event.endTime && ` - ${format(new Date(event.endTime), 'h:mm a')}`}
         </div>

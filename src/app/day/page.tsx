@@ -9,6 +9,7 @@ import {
 import Link from 'next/link'
 import InteractiveDayCol from '@/components/InteractiveDayCol'
 import InteractiveEvent from '@/components/InteractiveEvent'
+import { calculateEventLayout } from '@/lib/groupEvents'
 
 export const dynamic = 'force-dynamic' 
 
@@ -81,11 +82,12 @@ export default async function DayView({
         <div className={styles.daysContainer} style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
           {daysInGrid.map(day => {
             const dayEvents = events.filter((e: any) => format(e.startTime, 'yyyy-MM-dd') === format(day, 'yyyy-MM-dd'))
+            const layoutEvents = calculateEventLayout(dayEvents)
             const dateStr = format(day, 'yyyy-MM-dd')
 
             return (
               <InteractiveDayCol key={day.toISOString()} dateStr={dateStr} className={styles.dayCol}>
-                {dayEvents.map((event: any) => {
+                {layoutEvents.map((event: any) => {
                   const startHour = event.startTime.getHours()
                   const startMin = event.startTime.getMinutes()
                   
@@ -100,6 +102,9 @@ export default async function DayView({
                       href={getEventUrl(event.id)}
                       top={top}
                       height={height}
+                      assignedLeft={event.assignedLeft}
+                      isLayoutIndented={event.isLayoutIndented}
+                      zIndex={event.zIndex}
                       className={styles.eventBlock}
                     />
                   )

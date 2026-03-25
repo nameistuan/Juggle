@@ -1,6 +1,6 @@
 'use client'
 
-import React, { ReactNode, useState, useEffect } from 'react'
+import React, { ReactNode, useState, useEffect, startTransition } from 'react'
 import { useRouter } from 'next/navigation'
 
 export default function InteractiveDayCol({ dateStr, className, children }: { dateStr: string, className: string, children: ReactNode }) {
@@ -88,8 +88,10 @@ export default function InteractiveDayCol({ dateStr, className, children }: { da
           endTime: dropEndDate.toISOString()
         })
       })
-      // Server-bound data has shifted! Trigger silent Next.js soft refresh to immediately morph grid visually!
-      router.refresh()
+      // Server-bound data has shifted! Trigger silent Next.js soft refresh inside transition for high-FPS UI metric!
+      startTransition(() => {
+        router.refresh()
+      })
     } catch (err) {
       console.error("Failed to execute DND movement mathematically.", err)
     }
