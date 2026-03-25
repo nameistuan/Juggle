@@ -144,3 +144,12 @@
 .saveBtn:hover {
   background-color: var(--primary-hover);
 }
+
+.timeRow {
+  display: flex;
+  gap: 1rem;
+}
+
+.timeRow > .formGroup {
+  flex: 1;
+}

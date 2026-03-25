@@ -1,7 +1,6 @@
 'use client'
 
 import React, { useRef, useState, useEffect, startTransition } from 'react'
-import Link from 'next/link'
 import { format } from 'date-fns'
 import { useRouter } from 'next/navigation'
 
@@ -182,9 +181,8 @@ export default function InteractiveEvent({
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
     >
-      <Link 
-        href={href} 
-        scroll={false} 
+      <div 
+        onClick={() => router.push(href, { scroll: false })}
         style={{ 
           display: 'flex', 
           flexDirection: is30MinOrLess ? 'row' : 'column',
@@ -198,7 +196,6 @@ export default function InteractiveEvent({
           padding: linkPadding,
           overflow: 'hidden'
         }}
-        draggable={false} // don't trigger native Link ghost drags concurrently
       >
         <div style={{ fontWeight: 600, flexShrink: 0, maxWidth: '100%', minWidth: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
           {event.title}
@@ -207,7 +204,7 @@ export default function InteractiveEvent({
           {format(new Date(event.startTime), 'h:mm a')} 
           {isMoreThanHour && event.endTime && ` - ${format(new Date(event.endTime), 'h:mm a')}`}
         </div>
-      </Link>
+      </div>
       
       {/* Structural Resizer Hook */}
       <div 

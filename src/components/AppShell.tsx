@@ -24,13 +24,20 @@ export default function AppShell({
   const pathname = usePathname()
   
   const editEventId = searchParams.get('editEvent')
-  const isModalVisuallyOpen = isEventModalOpen || !!editEventId
+  const createParam = searchParams.get('create')
+  const startTimeParam = searchParams.get('startTime')
+  const endTimeParam = searchParams.get('endTime')
+  
+  const isModalVisuallyOpen = isEventModalOpen || !!editEventId || createParam === 'true'
 
   const handleCloseModal = () => {
     setIsEventModalOpen(false)
-    if (editEventId) {
+    if (editEventId || createParam === 'true') {
       const newParams = new URLSearchParams(searchParams.toString())
       newParams.delete('editEvent')
+      newParams.delete('create')
+      newParams.delete('startTime')
+      newParams.delete('endTime')
       const targetQuery = newParams.toString()
       router.push(targetQuery ? `${pathname}?${targetQuery}` : pathname, { scroll: false })
     }
@@ -292,7 +299,14 @@ export default function AppShell({
         )}
       </div>
 
-      {isModalVisuallyOpen && <EventModal eventId={editEventId || undefined} onClose={handleCloseModal} />}
+      {isModalVisuallyOpen && (
+        <EventModal 
+          eventId={editEventId || undefined} 
+          onClose={handleCloseModal}
+          initialStartTime={startTimeParam || undefined}
+          initialEndTime={endTimeParam || undefined}
+        />
+      )}
     </div>
   )
 }

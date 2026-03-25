@@ -9,10 +9,22 @@ interface Project {
   color: string;
 }
 
-export default function EventModal({ eventId, onClose }: { eventId?: string, onClose: () => void }) {
+export default function EventModal({ 
+  eventId, 
+  onClose,
+  initialStartTime,
+  initialEndTime
+}: { 
+  eventId?: string, 
+  onClose: () => void,
+  initialStartTime?: string,
+  initialEndTime?: string
+}) {
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10))
+  const [startTime, setStartTime] = useState(initialStartTime || '09:00')
+  const [endTime, setEndTime] = useState(initialEndTime || '10:00')
   const [projectId, setProjectId] = useState('')
   
   const [projects, setProjects] = useState<Project[]>([])
@@ -34,19 +46,24 @@ export default function EventModal({ eventId, onClose }: { eventId?: string, onC
           setTitle(data.title)
           setDescription(data.description || '')
           setDate(data.startTime.slice(0, 10))
+          setStartTime(data.startTime.slice(11, 16))
+          setEndTime(data.endTime.slice(11, 16))
           setProjectId(data.projectId || '')
         })
         .catch(err => console.error("Failed to load focal event", err))
+    } else {
+      if (initialStartTime) setStartTime(initialStartTime)
+      if (initialEndTime) setEndTime(initialEndTime)
     }
-  }, [eventId])
+  }, [eventId, initialStartTime, initialEndTime])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsSubmitting(true)
     
-    // For MVP phase, events default to 1-hour blocks at 9 AM
-    const start = new Date(`${date}T09:00:00`).toISOString()
-    const end = new Date(`${date}T10:00:00`).toISOString()
+    // Use the specific date/time from state
+    const start = new Date(`${date}T${startTime}:00`).toISOString()
+    const end = new Date(`${date}T${endTime}:00`).toISOString()
 
     try {
       await fetch(isEditing ? `/api/events/${eventId}` : '/api/events', {
@@ -120,6 +137,27 @@ export default function EventModal({ eventId, onClose }: { eventId?: string, onC
                 value={date}
                 onChange={e => setDate(e.target.value)}
               />
+            </div>
+
+            <div className={styles.timeRow}>
+              <div className={styles.formGroup}>
+                <label>Start Time</label>
+                <input 
+                  type="time" 
+                  required 
+                  value={startTime}
+                  onChange={e => setStartTime(e.target.value)}
+                />
+              </div>
+              <div className={styles.formGroup}>
+                <label>End Time</label>
+                <input 
+                  type="time" 
+                  required 
+                  value={endTime}
+                  onChange={e => setEndTime(e.target.value)}
+                />
+              </div>
             </div>
           </div>
           
