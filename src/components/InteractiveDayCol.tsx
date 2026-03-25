@@ -10,7 +10,7 @@ export default function InteractiveDayCol({ dateStr, className, children }: { da
   const [previewHeight, setPreviewHeight] = useState<number>(51)
   const [isPendingDrop, setIsPendingDrop] = useState(false)
 
-  const isLessThanHour = previewHeight < 50
+  const isMoreThanHour = previewHeight > 55
   const is15Min = previewHeight <= 16
   const linkPadding = is15Min ? '0 0.15rem' : '0.25rem 0.5rem'
 
@@ -127,19 +127,16 @@ export default function InteractiveDayCol({ dateStr, className, children }: { da
         >
           {/* Internal padding node structured exactly to mimic the <Link> bounds on standard blocks */}
           <div style={{ 
-            display: 'flex', 
-            flexDirection: isLessThanHour ? 'row' : 'column',
-            alignItems: isLessThanHour ? 'center' : 'flex-start',
-            gap: isLessThanHour ? '4px' : '0',
+            display: 'block', 
             height: '100%', 
             width: '100%', 
             padding: linkPadding,
             overflow: 'hidden'
           }}>
-            <div style={{ fontWeight: 600, flexShrink: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            <div style={{ fontWeight: 600, marginBottom: '2px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
               {(window as any).__activeDragTitle}
             </div>
-            <div style={{ opacity: 0.8, minWidth: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            <div style={{ opacity: 0.8, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
               {(window as any).__activeDragTime}
             </div>
           </div>

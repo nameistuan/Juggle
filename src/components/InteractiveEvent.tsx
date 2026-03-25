@@ -27,7 +27,7 @@ export default function InteractiveEvent({
   const startY = useRef(0)
   const startHeight = useRef(height)
 
-  const isLessThanHour = dragHeight < 50
+  const isMoreThanHour = dragHeight > 55 // > 1 hr
   const is15Min = dragHeight <= 16
 
   const linkPadding = is15Min ? '0 0.15rem' : '0.25rem 0.5rem'
@@ -169,10 +169,7 @@ export default function InteractiveEvent({
         href={href} 
         scroll={false} 
         style={{ 
-          display: 'flex', 
-          flexDirection: isLessThanHour ? 'row' : 'column',
-          alignItems: isLessThanHour ? 'center' : 'flex-start',
-          gap: isLessThanHour ? '4px' : '0',
+          display: 'block', 
           height: '100%', 
           width: '100%', 
           color: 'inherit', 
@@ -182,10 +179,10 @@ export default function InteractiveEvent({
         }}
         draggable={false} // don't trigger native Link ghost drags concurrently
       >
-        <div style={{ fontWeight: 600, flexShrink: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{event.title}</div>
-        <div style={{ opacity: 0.8, minWidth: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+        <div style={{ fontWeight: 600, marginBottom: '2px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{event.title}</div>
+        <div style={{ opacity: 0.8, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
           {format(new Date(event.startTime), 'h:mm a')} 
-          {!isLessThanHour && event.endTime && ` - ${format(new Date(event.endTime), 'h:mm a')}`}
+          {isMoreThanHour && event.endTime && ` - ${format(new Date(event.endTime), 'h:mm a')}`}
         </div>
       </Link>
       
