@@ -30,6 +30,7 @@ export default function InteractiveEvent({
   const [dragHeight, setDragHeight] = useState(height)
   const dragHeightRef = useRef(height) // Synchronous bypass for stale closure DOM events
   const isResizing = useRef(false)
+  const justResized = useRef(false)
   const startY = useRef(0)
   const startHeight = useRef(height)
 
@@ -147,6 +148,8 @@ export default function InteractiveEvent({
 
   const handlePointerUp = async (e: PointerEvent) => {
     isResizing.current = false
+    justResized.current = true
+    setTimeout(() => { justResized.current = false }, 100)
     document.removeEventListener('pointermove', handlePointerMove)
     document.removeEventListener('pointerup', handlePointerUp)
     
@@ -201,6 +204,7 @@ export default function InteractiveEvent({
       onDragEnd={handleDragEnd}
       onClick={(e) => {
         e.stopPropagation()
+        if (justResized.current) return
         router.push(href, { scroll: false })
       }}
     >
