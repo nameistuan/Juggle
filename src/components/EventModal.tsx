@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, startTransition } from 'react'
+import { useRouter } from 'next/navigation'
 import styles from './EventModal.module.css'
 
 interface Project {
@@ -32,6 +33,7 @@ export default function EventModal({
   const [projects, setProjects] = useState<Project[]>([])
   const [isSubmitting, setIsSubmitting] = useState(false)
   const isEditing = !!eventId
+  const router = useRouter()
 
   useEffect(() => {
     // Fetch available project tags
@@ -81,7 +83,10 @@ export default function EventModal({
         })
       })
       
-      window.location.reload()
+      onClose()
+      startTransition(() => {
+        router.refresh()
+      })
     } catch (err) {
       console.error(err)
       setIsSubmitting(false)
@@ -93,7 +98,10 @@ export default function EventModal({
     setIsSubmitting(true)
     try {
       await fetch(`/api/events/${eventId}`, { method: 'DELETE' })
-      window.location.reload()
+      onClose()
+      startTransition(() => {
+        router.refresh()
+      })
     } catch (err) {
       console.error(err)
       setIsSubmitting(false)
