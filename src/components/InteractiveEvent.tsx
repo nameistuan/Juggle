@@ -3,7 +3,7 @@
 import React, { useRef, useState, useEffect, startTransition } from 'react'
 import { format } from 'date-fns'
 import { useRouter } from 'next/navigation'
-import { deleteEvent } from '@/lib/undoManager'
+import { deleteEvent, updateEvent } from '@/lib/undoManager'
 
 export default function InteractiveEvent({ 
   event, 
@@ -155,11 +155,10 @@ export default function InteractiveEvent({
     const newEndTime = new Date(new Date(event.startTime).getTime() + newDurationMins * 60000)
 
     try {
-      await fetch(`/api/events/${event.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ endTime: newEndTime.toISOString() })
-      })
+      const label = await updateEvent(event.id, { endTime: newEndTime.toISOString() })
+      if (label) {
+        window.dispatchEvent(new CustomEvent('pac-toast', { detail: `Resized "${label}" — Press ⌘Z to undo` }))
+      }
       startTransition(() => {
         router.refresh()
       })

@@ -2,6 +2,7 @@
 
 import React, { ReactNode, useState, useEffect, useRef, startTransition } from 'react'
 import { useRouter } from 'next/navigation'
+import { updateEvent } from '@/lib/undoManager'
 
 export default function InteractiveDayCol({ dateStr, className, children }: { dateStr: string, className: string, children: ReactNode }) {
   const router = useRouter()
@@ -81,14 +82,13 @@ export default function InteractiveDayCol({ dateStr, className, children }: { da
     const dropEndDate = new Date(dropStartDate.getTime() + durationMs)
 
     try {
-      await fetch(`/api/events/${eventId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          startTime: dropStartDate.toISOString(),
-          endTime: dropEndDate.toISOString()
-        })
+      const label = await updateEvent(eventId, {
+        startTime: dropStartDate.toISOString(),
+        endTime: dropEndDate.toISOString()
       })
+      if (label) {
+        window.dispatchEvent(new CustomEvent('pac-toast', { detail: `Moved "${label}" — Press ⌘Z to undo` }))
+      }
       startTransition(() => {
         router.refresh()
       })

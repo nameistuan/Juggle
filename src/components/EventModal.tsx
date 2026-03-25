@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, startTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import styles from './EventModal.module.css'
-import { deleteEvent } from '@/lib/undoManager'
+import { deleteEvent, updateEvent, pushCreate } from '@/lib/undoManager'
 
 interface Project {
   id: string;
@@ -77,22 +77,47 @@ export default function EventModal({
     e.preventDefault()
     setIsSubmitting(true)
     
-    // Use the specific date/time from state
     const start = new Date(`${date}T${startTime}:00`).toISOString()
     const end = new Date(`${date}T${endTime}:00`).toISOString()
 
     try {
-      await fetch(isEditing ? `/api/events/${eventId}` : '/api/events', {
-        method: isEditing ? 'PUT' : 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+      if (isEditing && eventId) {
+        // Use undoManager for edits so they can be undone
+        const label = await updateEvent(eventId, {
           title,
           description,
           startTime: start,
           endTime: end,
-          projectId: projectId || undefined
+          projectId: projectId || null,
         })
-      })
+        if (label) {
+          window.dispatchEvent(new CustomEvent('pac-toast', { detail: `Edited "${title}" — Press ⌘Z to undo` }))
+        }
+      } else {
+        // Create new event and push to undo stack
+        const res = await fetch('/api/events', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            title,
+            description,
+            startTime: start,
+            endTime: end,
+            projectId: projectId || undefined
+          })
+        })
+        const created = await res.json()
+        pushCreate({
+          id: created.id,
+          title: created.title,
+          description: created.description,
+          startTime: created.startTime,
+          endTime: created.endTime,
+          projectId: created.projectId,
+          taskId: created.taskId,
+          isFluid: created.isFluid ?? false,
+        })
+      }
       
       onClose()
       startTransition(() => {

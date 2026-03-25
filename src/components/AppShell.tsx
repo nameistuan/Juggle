@@ -146,17 +146,17 @@ export default function AppShell({
         router.push(`${pName}?date=${format(next, 'yyyy-MM-dd')}`)
       } else if ((e.metaKey || e.ctrlKey) && e.key === 'z' && !e.shiftKey) {
         e.preventDefault()
-        undo().then(success => {
-          if (success) {
-            showToast('Undo: Event restored')
+        undo().then(label => {
+          if (label) {
+            showToast(label)
             startTransition(() => router.refresh())
           }
         })
       } else if ((e.metaKey || e.ctrlKey) && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) {
         e.preventDefault()
-        redo().then(success => {
-          if (success) {
-            showToast('Redo: Event deleted')
+        redo().then(label => {
+          if (label) {
+            showToast(label)
             startTransition(() => router.refresh())
           }
         })
