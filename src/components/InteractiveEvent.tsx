@@ -201,11 +201,9 @@ export default function InteractiveEvent({
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
       onClick={(e) => {
-        // Single click: just focus/select the event block
         e.stopPropagation()
-        blockRef.current?.focus()
+        router.push(href, { scroll: false })
       }}
-      onDoubleClick={() => router.push(href, { scroll: false })}
     >
       <div 
         style={{ 

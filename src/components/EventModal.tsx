@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, startTransition } from 'react'
+import { useState, useEffect, useRef, startTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import styles from './EventModal.module.css'
 import { deleteEvent } from '@/lib/undoManager'
@@ -35,6 +35,14 @@ export default function EventModal({
   const [isSubmitting, setIsSubmitting] = useState(false)
   const isEditing = !!eventId
   const router = useRouter()
+  const modalRef = useRef<HTMLDivElement>(null)
+
+  // Focus the modal container (not any input) when editing so Delete key works immediately
+  useEffect(() => {
+    if (isEditing && modalRef.current) {
+      modalRef.current.focus()
+    }
+  }, [isEditing])
 
   useEffect(() => {
     // Fetch available project tags
@@ -111,7 +119,20 @@ export default function EventModal({
 
   return (
     <div className={styles.modalOverlay} onMouseDown={onClose}>
-      <div className={styles.modalContent} onMouseDown={(e) => e.stopPropagation()}>
+      <div 
+        className={styles.modalContent} 
+        onMouseDown={(e) => e.stopPropagation()}
+        tabIndex={-1}
+        onKeyDown={(e) => {
+          const tag = document.activeElement?.tagName
+          if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return
+          if ((e.key === 'Delete' || e.key === 'Backspace') && isEditing) {
+            e.preventDefault()
+            handleDelete()
+          }
+        }}
+        ref={modalRef}
+      >
         <div className={styles.modalHeader}>
           <h2 className={styles.modalTitle}>{isEditing ? 'Edit Event' : 'New Event'}</h2>
           <button type="button" className={styles.closeButton} onClick={onClose}>&times;</button>
@@ -127,7 +148,7 @@ export default function EventModal({
                 placeholder="e.g. Intro to Biology Midterm" 
                 value={title}
                 onChange={e => setTitle(e.target.value)}
-                autoFocus
+                autoFocus={!isEditing}
               />
             </div>
 
