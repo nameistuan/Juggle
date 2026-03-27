@@ -83,30 +83,59 @@ export default async function WeekView({
         {/* Days Grid */}
         <div className={styles.daysContainer}>
           {daysInGrid.map(day => {
-            const dayEvents = events.filter((e: any) => format(e.startTime, 'yyyy-MM-dd') === format(day, 'yyyy-MM-dd'))
-            const layoutEvents = calculateEventLayout(dayEvents)
+            const dayStart = new Date(day)
+            dayStart.setHours(0,0,0,0)
+            const dayEnd = new Date(day)
+            dayEnd.setHours(23,59,59,999)
+
+            // Intersection-based filtering: event overlaps day if it starts before day ends AND ends after day starts
+            const overlappingEvents = events.filter((e: any) => {
+              const eStart = new Date(e.startTime)
+              const eEnd = e.endTime ? new Date(e.endTime) : new Date(eStart.getTime() + 3600000)
+              return eStart <= dayEnd && eEnd >= dayStart
+            })
+            
+            // Map to 'layout' compatible objects but using clipped boundaries for the current day
+            const daySpecificEvents = overlappingEvents.map((e: any) => {
+              const eStart = new Date(e.startTime)
+              const eEnd = e.endTime ? new Date(e.endTime) : new Date(eStart.getTime() + 3600000)
+              
+              const clippedStart = eStart < dayStart ? dayStart : eStart
+              const clippedEnd = eEnd > dayEnd ? dayEnd : eEnd
+
+              return {
+                ...e,
+                displayStart: clippedStart,
+                displayEnd: clippedEnd,
+                // These will be used for layout calculations (overlap detection)
+                startTime: clippedStart,
+                endTime: clippedEnd
+              }
+            })
+
+            const layoutEvents = calculateEventLayout(daySpecificEvents)
             const dateStr = format(day, 'yyyy-MM-dd')
 
             return (
               <InteractiveDayCol key={day.toISOString()} dateStr={dateStr} className={styles.dayCol}>
-                {layoutEvents.map((event: any) => {
-                  const startHour = event.startTime.getHours()
-                  const startMin = event.startTime.getMinutes()
+                {layoutEvents.map((le: any) => {
+                  const startHour = le.displayStart.getHours()
+                  const startMin = le.displayStart.getMinutes()
                   
-                  const durationMs = event.endTime ? new Date(event.endTime).getTime() - event.startTime.getTime() : 3600000 // default 1hr
+                  const durationMs = le.displayEnd.getTime() - le.displayStart.getTime()
                   const top = (startHour * 51) + (startMin * (51 / 60))
-                  const height = (durationMs / 3600000) * 51 // Accurate pixel sizing bound completely to DB state
+                  const height = Math.max((durationMs / 3600000) * 51, 12) // clamp min height
 
                   return (
                     <InteractiveEvent
-                      key={event.id}
-                      event={event}
-                      href={getEventUrl(event.id)}
+                      key={`${le.id}-${dateStr}`}
+                      event={le}
+                      href={getEventUrl(le.id)}
                       top={top}
                       height={height}
-                      assignedLeft={event.assignedLeft}
-                      isLayoutIndented={event.isLayoutIndented}
-                      zIndex={event.zIndex}
+                      assignedLeft={le.assignedLeft}
+                      isLayoutIndented={le.isLayoutIndented}
+                      zIndex={le.zIndex}
                       className={styles.eventBlock}
                     />
                   )
