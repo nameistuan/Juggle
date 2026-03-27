@@ -26,13 +26,14 @@ export async function PUT(
   try {
     const { id } = await params
     const body = await request.json()
-    const { title, description, startTime, endTime, taskId, projectId, isFluid } = body
+    const { title, description, location, startTime, endTime, taskId, projectId, isFluid } = body
 
     const event = await prisma.event.update({
       where: { id },
       data: {
         title,
         description,
+        location: location !== undefined ? location : undefined,
         startTime: startTime ? new Date(startTime) : undefined,
         endTime: endTime ? new Date(endTime) : undefined,
         taskId: taskId !== undefined ? taskId : undefined,

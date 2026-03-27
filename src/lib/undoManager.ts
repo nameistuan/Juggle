@@ -4,6 +4,7 @@ export interface EventSnapshot {
   id: string
   title: string
   description: string | null
+  location: string | null
   startTime: string
   endTime: string | null
   projectId: string | null
@@ -30,6 +31,7 @@ async function fetchSnapshot(eventId: string): Promise<EventSnapshot | null> {
       id: e.id,
       title: e.title,
       description: e.description,
+      location: e.location,
       startTime: e.startTime,
       endTime: e.endTime,
       projectId: e.projectId,
@@ -58,6 +60,7 @@ async function recreateEvent(snap: EventSnapshot): Promise<string | null> {
       body: JSON.stringify({
         title: snap.title,
         description: snap.description,
+        location: snap.location,
         startTime: snap.startTime,
         endTime: snap.endTime,
         projectId: snap.projectId,

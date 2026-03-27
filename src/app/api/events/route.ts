@@ -16,12 +16,13 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const body = await request.json()
-    const { title, description, startTime, endTime, taskId, projectId, isFluid } = body
+    const { title, description, location, startTime, endTime, taskId, projectId, isFluid } = body
     
     const event = await prisma.event.create({
       data: {
         title,
         description,
+        location,
         startTime: new Date(startTime),
         endTime: new Date(endTime),
         taskId,

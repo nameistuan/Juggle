@@ -205,6 +205,11 @@ export default function InteractiveEvent({
       onClick={(e) => {
         e.stopPropagation()
         if (justResized.current) return
+        // Store click anchor for contextual modal positioning
+        if (blockRef.current) {
+          const rect = blockRef.current.getBoundingClientRect()
+          ;(window as any).__modalAnchor = { top: rect.top, left: rect.left, right: rect.right, bottom: rect.bottom, width: rect.width, height: rect.height }
+        }
         router.push(href, { scroll: false })
       }}
     >
