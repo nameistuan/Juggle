@@ -55,23 +55,22 @@ export default function EventModal({
       const vw = document.documentElement.clientWidth
       const vh = document.documentElement.clientHeight
 
-      // Horizontal: Prefer right, then left, then center
-      let left: number
-      if (ax + aw + gap + modalW <= vw - 16) {
-        left = ax + aw + gap
-      } else if (ax - gap - modalW >= 16) {
-        left = ax - gap - modalW
-      } else {
-        left = Math.max(16, (vw - modalW) / 2)
+      // Horizontal: Center the modal relative to the event's center
+      let left = (ax + aw / 2) - modalW / 2
+      
+      // Safety clamp for horizontal edges
+      if (left < 16) left = 16
+      if (left + modalW > vw - 16) {
+        left = Math.max(16, vw - modalW - 16)
       }
 
-      // Vertical: Prefer top alignment with event, but clamp to viewport
-      let top = ay
-      // If modal is taller than remaining space, shift up
+      // Vertical: Center the modal relative to the event's center
+      let top = (ay + ah / 2) - modalH / 2
+      
+      // If modal is taller than viewport, align to top
       if (top + modalH > vh - 24) {
         top = Math.max(16, vh - modalH - 24)
       }
-      // If still too high, clamp to top
       if (top < 16) top = 16
 
       // Final safety clamp for right edge
