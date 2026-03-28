@@ -45,10 +45,15 @@ export default function InteractiveEvent({
   const linkPadding = is15Min ? '0 0.15rem' : '0.25rem 0.5rem'
 
   // Sync internal drag height if server pushes a prop update
+  // Sync internal drag height if server pushes a prop update
   useEffect(() => {
     setDragHeight(height)
     dragHeightRef.current = height
-    // Forcefully restore visibility when the server pushes a newly positioned DND drop coordinate cleanly!
+    // Recover visibility only once the server data has actually flipped to the new state
+    if ((window as any).__pendingEventId === event.id) {
+      (window as any).__pendingEventId = null
+    }
+    setIsHidden(false)
     if (blockRef.current) blockRef.current.style.opacity = '1'
   }, [height, top, event.startTime, event.endTime])
 
@@ -150,7 +155,13 @@ export default function InteractiveEvent({
         setIsHidden(true)
       }
     }
-    const handleEnd = () => setIsHidden(false)
+    const handleEnd = () => {
+      if ((window as any).__pendingEventId === event.id) {
+        setIsHidden(true)
+      } else {
+        setIsHidden(false)
+      }
+    }
     window.addEventListener('pac-resize-preview', handlePreview)
     window.addEventListener('pac-resize-end', handleEnd)
     return () => {
@@ -215,6 +226,9 @@ export default function InteractiveEvent({
     window.dispatchEvent(new CustomEvent('pac-resize-end'))
     
     if (!currentTargetEndTime.current) return
+    
+    ;(window as any).__pendingEventId = event.id
+    setIsHidden(true)
 
     try {
       const label = await updateEvent(event.id, { endTime: currentTargetEndTime.current.toISOString() })

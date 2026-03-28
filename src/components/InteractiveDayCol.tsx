@@ -67,8 +67,11 @@ export default function InteractiveDayCol({ dateStr, className, children }: { da
       }
     }
     const handleResizeEnd = () => {
-      setResizeY(null)
-      setResizeHeight(null)
+      // Keep ghost visible for a split second to cover the gap while router.refresh() happens
+      setTimeout(() => {
+        setResizeY(null)
+        setResizeHeight(null)
+      }, 200)
     }
 
     window.addEventListener('pac-resize-preview', handleResizePreview)
