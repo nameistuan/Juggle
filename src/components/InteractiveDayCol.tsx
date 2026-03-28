@@ -95,8 +95,11 @@ export default function InteractiveDayCol({ dateStr, className, children }: { da
     
     const minutesLayout = (y / 51) * 60
     const totalMinutesSnapped = Math.round(minutesLayout / 15) * 15
-    const snappedPixelY = (totalMinutesSnapped / 60) * 51
-    const snappedHeight = (dragDurationMs / 3600000) * 51
+    const snappedPixelY = Math.min((totalMinutesSnapped / 60) * 51, (24 * 51) - 12.75) // at least one slot
+    
+    // Ghost block only fills current day column even if it extends further
+    const rawHeight = (dragDurationMs / 3600000) * 51
+    const snappedHeight = Math.min(rawHeight, (24 * 51) - snappedPixelY)
     
     setPreviewY(snappedPixelY)
     setPreviewHeight(snappedHeight)
@@ -184,7 +187,7 @@ export default function InteractiveDayCol({ dateStr, className, children }: { da
       
       const minutesLayout = (y / 51) * 60
       const totalMinutesSnapped = Math.round(minutesLayout / 15) * 15
-      const snappedPixelY = (totalMinutesSnapped / 60) * 51
+      const snappedPixelY = Math.max(0, Math.min((totalMinutesSnapped / 60) * 51, (24 * 51)))
       
       setCreateCurrentTop(snappedPixelY)
     }
