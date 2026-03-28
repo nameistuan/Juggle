@@ -85,14 +85,15 @@ export default async function WeekView({
           {daysInGrid.map(day => {
             const dayStart = new Date(day)
             dayStart.setHours(0,0,0,0)
-            const dayEnd = new Date(day)
-            dayEnd.setHours(23,59,59,999)
+            const dayEnd = new Date(dayStart)
+            dayEnd.setDate(dayEnd.getDate() + 1) // Exact midnight of the next day
 
             // Intersection-based filtering: event overlaps day if it starts before day ends AND ends after day starts
+            // Using exclusive comparison (> and <) to prevent events exactly ending/starting at midnight from bleeding into the wrong day
             const overlappingEvents = events.filter((e: any) => {
               const eStart = new Date(e.startTime)
               const eEnd = e.endTime ? new Date(e.endTime) : new Date(eStart.getTime() + 3600000)
-              return eStart <= dayEnd && eEnd >= dayStart
+              return eStart < dayEnd && eEnd > dayStart
             })
             
             // Map to 'layout' compatible objects but using clipped boundaries for the current day

@@ -140,7 +140,14 @@ export default function InteractiveEvent({
     const snappedDeltaY = Math.round(deltaY / 12.75) * 12.75
     
     let newHeight = startHeight.current + snappedDeltaY
-    if (newHeight < 12.75) newHeight = 12.75 // absolute min 15 mins
+    
+    // Clamp to min 15 mins (12.75px)
+    if (newHeight < 12.75) newHeight = 12.75
+    
+    // Clamp to end of the current day (midnight)
+    // 24 hours * 51px/hour - top = pixels remaining until midnight
+    const maxPx = (24 * 51) - top
+    if (newHeight > maxPx) newHeight = maxPx
     
     setDragHeight(newHeight)
     dragHeightRef.current = newHeight // Sycnhronize natively against closure scope
