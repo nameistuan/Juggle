@@ -74,13 +74,17 @@ export default function InteractiveEvent({
     }
     
     // Inject relative timescale data structurally into payload
-    const originalStartTime = new Date(event.startTime).getTime()
-    const originalEndTime = event.endTime ? new Date(event.endTime).getTime() : originalStartTime + 3600000
-    const durationMs = originalEndTime - originalStartTime
+    const actualStart = event.fullStartTime ? new Date(event.fullStartTime) : new Date(event.startTime)
+    const actualEnd = event.fullEndTime ? new Date(event.fullEndTime) : new Date(actualStart.getTime() + 3600000)
+    const durationMs = actualEnd.getTime() - actualStart.getTime()
     
-    // Calculate the precise pixel offset from the top of the event where the cursor grabbed it
+    // Multi-day offset: Distance from the actual event start to the top of the current day's rendered block
+    const clipOffsetMs = event.displayStart ? (new Date(event.displayStart).getTime() - actualStart.getTime()) : 0
+    const clipOffsetPx = (clipOffsetMs / 3600000) * 51
+
+    // Calculate the precise pixel offset from the TRUE start of the event where the cursor grabbed it
     const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
-    const dragOffsetY = e.clientY - rect.top
+    const dragOffsetY = (e.clientY - rect.top) + clipOffsetPx
 
     e.dataTransfer.setData('eventId', event.id)
     e.dataTransfer.setData('eventDurationMs', durationMs.toString())
@@ -94,8 +98,8 @@ export default function InteractiveEvent({
     ;(window as any).__activeDragColor = event.project ? event.project.color : null
     
     // Pass precise static typography to identically match original visual node
-    const startTimeStr = format(new Date(event.startTime), 'h:mm a')
-    const endTimeStr = event.endTime ? ` - ${format(new Date(event.endTime), 'h:mm a')}` : ''
+    const startTimeStr = format(actualStart, 'h:mm a')
+    const endTimeStr = event.endTime ? ` - ${format(actualEnd, 'h:mm a')}` : ''
     ;(window as any).__activeDragTime = startTimeStr + endTimeStr
     
     // Natively override the browser OS ghost graphic out of the layout rendering
@@ -145,7 +149,11 @@ export default function InteractiveEvent({
 
     const targetDateStr = el?.getAttribute('data-date')
     const originalDateStr = format(new Date(event.startTime), 'yyyy-MM-dd')
-    const isDifferentDay = targetDateStr && targetDateStr !== originalDateStr
+    
+    // Strictly prevent "backward" resizing: 
+    // If we're in a previous day, or the same day but mouse is before start time + duration cushion
+    const isPreviousDay = targetDateStr && targetDateStr < originalDateStr
+    const isDifferentDay = targetDateStr && targetDateStr > originalDateStr
 
     if (!isDifferentDay) {
       // Clear any multi-day previews when returning to original day
@@ -156,8 +164,11 @@ export default function InteractiveEvent({
       const deltaY = e.clientY - startY.current
       const snappedDeltaY = Math.round(deltaY / 12.75) * 12.75
       let newHeight = startHeight.current + snappedDeltaY
+      
+      // Minimum duration 15 mins (12.75px)
       if (newHeight < 12.75) newHeight = 12.75
       
+      // Clamp to end of day if not moving across days
       const maxPx = (24 * 51) - top
       if (newHeight > maxPx) newHeight = maxPx
       
@@ -167,7 +178,7 @@ export default function InteractiveEvent({
       const totalMins = Math.round((newHeight / 51) * 60)
       currentTargetEndTime.current = new Date(new Date(event.startTime).getTime() + totalMins * 60000)
     } else {
-      // Multi-day resize!
+      // Forward Multi-day resize!
       setDragHeight((24 * 51) - top)
       dragHeightRef.current = (24 * 51) - top
 

@@ -108,6 +108,8 @@ export default async function WeekView({
                 ...e,
                 displayStart: clippedStart,
                 displayEnd: clippedEnd,
+                fullStartTime: eStart,
+                fullEndTime: eEnd,
                 // These will be used for layout calculations (overlap detection)
                 startTime: clippedStart,
                 endTime: clippedEnd
