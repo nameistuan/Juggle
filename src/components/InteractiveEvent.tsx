@@ -52,27 +52,48 @@ export default function InteractiveEvent({
     if (blockRef.current) blockRef.current.style.opacity = '1'
   }, [height, top, event.startTime, event.endTime])
 
-  // Listen for resize signals to hide intermediate blocks of the SAME event during shrink/expand
+  // Listen for resize signals to hide/resize segments of THE SAME event during shrink/expand
   useEffect(() => {
     const handlePreview = (e: any) => {
-      const { id, targetDate } = e.detail
+      const { id, targetEndTimeStr } = e.detail
       if (id === event.id && !isResizing.current) {
-        // If the current target date of the resize is BEFORE this block's date, hide this block!
-        if (dateStr > targetDate) {
+        const targetEndTime = new Date(targetEndTimeStr)
+        const dayStart = new Date(dateStr)
+        dayStart.setHours(0,0,0,0)
+        const dayEnd = new Date(dayStart)
+        dayEnd.setDate(dayEnd.getDate() + 1) // midnight
+
+        if (targetEndTime <= dayStart) {
           setIsHidden(true)
         } else {
           setIsHidden(false)
+          // Calculate segment height for this day
+          const actualStart = event.fullStartTime ? new Date(event.fullStartTime) : new Date(event.startTime)
+          const displayStart = actualStart < dayStart ? dayStart : actualStart
+          const displayEnd = targetEndTime > dayEnd ? dayEnd : targetEndTime
+          
+          if (displayEnd <= displayStart) {
+            setIsHidden(true)
+          } else {
+            const h = ((displayEnd.getTime() - displayStart.getTime()) / 3600000) * 51
+            setDragHeight(h)
+            dragHeightRef.current = h
+          }
         }
       }
     }
-    const handleEnd = () => setIsHidden(false)
+    const handleEnd = () => {
+      setIsHidden(false)
+      setDragHeight(height)
+      dragHeightRef.current = height
+    }
     window.addEventListener('pac-resize-preview', handlePreview)
     window.addEventListener('pac-resize-end', handleEnd)
     return () => {
       window.removeEventListener('pac-resize-preview', handlePreview)
       window.removeEventListener('pac-resize-end', handleEnd)
     }
-  }, [event.id, dateStr])
+  }, [event.id, dateStr, height, event.fullStartTime, event.startTime])
 
 
 
@@ -166,86 +187,65 @@ export default function InteractiveEvent({
   const handlePointerMove = (e: PointerEvent) => {
     if (!isResizing.current) return
     
-    // Find column under cursor for cross-day resizing
     let el = document.elementFromPoint(e.clientX, e.clientY) as HTMLElement | null
     while (el && !el.hasAttribute('data-day-col')) {
       el = el.parentElement
     }
 
-    const targetDateStr = el?.getAttribute('data-date')
-    const originalDateStr = format(new Date(event.startTime), 'yyyy-MM-dd')
-    
-    // Strictly prevent "backward" resizing: 
-    // If we're in a previous day, or the same day but mouse is before start time + duration cushion
-    const isPreviousDay = targetDateStr && targetDateStr < originalDateStr
-    const isDifferentDay = targetDateStr && targetDateStr > originalDateStr
+    const tDateStr = el?.getAttribute('data-date')
+    const actualStart = event.fullStartTime ? new Date(event.fullStartTime) : new Date(event.startTime)
+    const startDateStr = format(actualStart, 'yyyy-MM-dd')
 
-    if (!isDifferentDay) {
-      // Clear any multi-day previews when returning to original day
-      if (currentTargetEndTime.current && format(currentTargetEndTime.current, 'yyyy-MM-dd') !== originalDateStr) {
-        window.dispatchEvent(new CustomEvent('pac-resize-end'))
+    if (tDateStr) {
+      const rect = el!.getBoundingClientRect()
+      const y = e.clientY - rect.top
+      const minutesOnTargetDay = Math.round(((y / 51) * 60) / 15) * 15
+      
+      const [yyyy, mm, dd] = tDateStr.split('-').map(Number)
+      const targetTime = new Date(yyyy, mm - 1, dd)
+      targetTime.setHours(Math.floor(minutesOnTargetDay / 60), minutesOnTargetDay % 60, 0, 0)
+
+      // Clamp targetTime so it never goes before (Start + 15mins)
+      const minEnd = new Date(actualStart.getTime() + 15 * 60000)
+      const finalTargetTime = targetTime < minEnd ? minEnd : targetTime
+      
+      currentTargetEndTime.current = finalTargetTime
+
+      // 1. Local Visual Update for the segment we are dragging:
+      const dayStart = new Date(dateStr)
+      dayStart.setHours(0,0,0,0)
+      const dayEnd = new Date(dayStart)
+      dayEnd.setDate(dayEnd.getDate() + 1)
+
+      const displayStart = actualStart < dayStart ? dayStart : actualStart
+      const displayEnd = finalTargetTime > dayEnd ? dayEnd : finalTargetTime
+
+      if (displayEnd <= displayStart) {
+        setIsHidden(true)
+      } else {
+        setIsHidden(false)
+        const h = ((displayEnd.getTime() - displayStart.getTime()) / 3600000) * 51
+        setDragHeight(h)
+        dragHeightRef.current = h
       }
 
-      const deltaY = e.clientY - startY.current
-      const snappedDeltaY = Math.round(deltaY / 12.75) * 12.75
-      let newHeight = startHeight.current + snappedDeltaY
-      
-      // Minimum duration 15 mins (12.75px)
-      if (newHeight < 12.75) newHeight = 12.75
-      
-      // Clamp to end of day if not moving across days
-      const maxPx = (24 * 51) - top
-      if (newHeight > maxPx) newHeight = maxPx
-      
-      setDragHeight(newHeight)
-      dragHeightRef.current = newHeight
-      
-      const totalMins = Math.round((newHeight / 51) * 60)
-      const newEndTime = new Date(new Date(event.startTime).getTime() + totalMins * 60000)
-      currentTargetEndTime.current = newEndTime
-
-      // Dispatch signal so other columns know to hide (since we are back in day 1)
+      // 2. Broadcast for all other columns/segments
       window.dispatchEvent(new CustomEvent('pac-resize-preview', { 
         detail: { 
           id: event.id,
-          startDate: originalDateStr,
-          targetDate: originalDateStr, 
-          endHeight: newHeight,
+          startDate: startDateStr,
+          targetDate: tDateStr, 
+          targetEndTimeStr: finalTargetTime.toISOString(),
+          endHeight: minutesOnTargetDay * (51/60),
           color: event.project ? event.project.color : 'var(--primary-color)'
         } 
       }))
+
+      window.dispatchEvent(new CustomEvent('pac-toast', { 
+        detail: `Target: ${format(finalTargetTime, 'MMM d, h:mm a')}` 
+      }))
     } else {
-      // Forward Multi-day resize!
-      setDragHeight((24 * 51) - top)
-      dragHeightRef.current = (24 * 51) - top
-
-      if (el && targetDateStr) {
-        const rect = el.getBoundingClientRect()
-        const y = e.clientY - rect.top
-        const minutesOnNewDay = Math.max(0, Math.round(((y / 51) * 60) / 15) * 15)
-        
-        const [yyyy, mm, dd] = targetDateStr.split('-').map(Number)
-        const targetDayEnd = new Date(yyyy, mm - 1, dd)
-        targetDayEnd.setHours(Math.floor(minutesOnNewDay / 60), minutesOnNewDay % 60, 0, 0)
-        
-        currentTargetEndTime.current = targetDayEnd
-        
-        // Broadcast entire span for all intermediary columns
-        window.dispatchEvent(new CustomEvent('pac-resize-preview', { 
-          detail: { 
-            id: event.id,
-            startDate: originalDateStr,
-            targetDate: targetDateStr, 
-            endHeight: minutesOnNewDay * (51/60),
-            color: event.project ? event.project.color : 'var(--primary-color)'
-          } 
-        }))
-
-        const timeStr = format(targetDayEnd, 'MMM d, h:mm a')
-        window.dispatchEvent(new CustomEvent('pac-toast', { detail: `Target: ${timeStr}` }))
-      } else {
-        window.dispatchEvent(new CustomEvent('pac-resize-end'))
-      }
+      window.dispatchEvent(new CustomEvent('pac-resize-end'))
     }
   }
 
