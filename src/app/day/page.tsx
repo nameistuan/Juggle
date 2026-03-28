@@ -100,6 +100,7 @@ export default async function DayView({
                       key={event.id}
                       event={event}
                       href={getEventUrl(event.id)}
+                      dateStr={dateStr}
                       top={top}
                       height={height}
                       assignedLeft={event.assignedLeft}

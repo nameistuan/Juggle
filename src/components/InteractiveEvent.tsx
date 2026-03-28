@@ -8,6 +8,7 @@ import { deleteEvent, updateEvent } from '@/lib/undoManager'
 export default function InteractiveEvent({ 
   event, 
   href, 
+  dateStr,
   top, 
   height,
   className,
@@ -17,6 +18,7 @@ export default function InteractiveEvent({
 }: { 
   event: any, 
   href: string, 
+  dateStr: string,
   top: number, 
   height: number,
   className: string,
@@ -24,6 +26,7 @@ export default function InteractiveEvent({
   isLayoutIndented?: boolean,
   zIndex?: number
 }) {
+  const [isHidden, setIsHidden] = useState(false)
   const router = useRouter()
   const blockRef = useRef<HTMLDivElement>(null)
   
@@ -48,6 +51,28 @@ export default function InteractiveEvent({
     // Forcefully restore visibility when the server pushes a newly positioned DND drop coordinate cleanly!
     if (blockRef.current) blockRef.current.style.opacity = '1'
   }, [height, top, event.startTime, event.endTime])
+
+  // Listen for resize signals to hide intermediate blocks of the SAME event during shrink/expand
+  useEffect(() => {
+    const handlePreview = (e: any) => {
+      const { id, targetDate } = e.detail
+      if (id === event.id && !isResizing.current) {
+        // If the current target date of the resize is BEFORE this block's date, hide this block!
+        if (dateStr > targetDate) {
+          setIsHidden(true)
+        } else {
+          setIsHidden(false)
+        }
+      }
+    }
+    const handleEnd = () => setIsHidden(false)
+    window.addEventListener('pac-resize-preview', handlePreview)
+    window.addEventListener('pac-resize-end', handleEnd)
+    return () => {
+      window.removeEventListener('pac-resize-preview', handlePreview)
+      window.removeEventListener('pac-resize-end', handleEnd)
+    }
+  }, [event.id, dateStr])
 
 
 
@@ -176,7 +201,19 @@ export default function InteractiveEvent({
       dragHeightRef.current = newHeight
       
       const totalMins = Math.round((newHeight / 51) * 60)
-      currentTargetEndTime.current = new Date(new Date(event.startTime).getTime() + totalMins * 60000)
+      const newEndTime = new Date(new Date(event.startTime).getTime() + totalMins * 60000)
+      currentTargetEndTime.current = newEndTime
+
+      // Dispatch signal so other columns know to hide (since we are back in day 1)
+      window.dispatchEvent(new CustomEvent('pac-resize-preview', { 
+        detail: { 
+          id: event.id,
+          startDate: originalDateStr,
+          targetDate: originalDateStr, 
+          endHeight: newHeight,
+          color: event.project ? event.project.color : 'var(--primary-color)'
+        } 
+      }))
     } else {
       // Forward Multi-day resize!
       setDragHeight((24 * 51) - top)
@@ -196,6 +233,7 @@ export default function InteractiveEvent({
         // Broadcast entire span for all intermediary columns
         window.dispatchEvent(new CustomEvent('pac-resize-preview', { 
           detail: { 
+            id: event.id,
             startDate: originalDateStr,
             targetDate: targetDateStr, 
             endHeight: minutesOnNewDay * (51/60),
@@ -246,6 +284,7 @@ export default function InteractiveEvent({
       data-event-block="true"
       onKeyDown={handleKeyDown}
       style={{
+        display: isHidden ? 'none' : 'block',
         top: `${top}px`,
         height: `${dragHeight}px`,
         position: 'absolute',

@@ -134,6 +134,7 @@ export default async function WeekView({
                       key={`${le.id}-${dateStr}`}
                       event={le}
                       href={getEventUrl(le.id)}
+                      dateStr={dateStr}
                       top={top}
                       height={height}
                       assignedLeft={le.assignedLeft}
