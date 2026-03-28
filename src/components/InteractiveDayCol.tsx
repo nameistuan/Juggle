@@ -35,9 +35,17 @@ export default function InteractiveDayCol({ dateStr, className, children }: { da
   // Listen for multi-day resize previews
   useEffect(() => {
     const handleResizePreview = (e: any) => {
-      const { targetDate, height, color } = e.detail
-      if (targetDate === dateStr) {
-        setResizeHeight(height)
+      const { startDate, targetDate, endHeight, color } = e.detail
+      
+      // Lexical comparison works for YYYY-MM-DD
+      const isTarget = dateStr === targetDate
+      const isIntermediary = dateStr > startDate && dateStr < targetDate
+      
+      if (isTarget) {
+        setResizeHeight(endHeight)
+        setResizeColor(color)
+      } else if (isIntermediary) {
+        setResizeHeight(24 * 51) // Full day preview
         setResizeColor(color)
       } else {
         setResizeHeight(null)

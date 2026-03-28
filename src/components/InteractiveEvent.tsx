@@ -138,9 +138,8 @@ export default function InteractiveEvent({
     if (!isResizing.current) return
     
     // Find column under cursor for cross-day resizing
-    // We walk up to find the data-date attribute
     let el = document.elementFromPoint(e.clientX, e.clientY) as HTMLElement | null
-    while (el && !el.hasAttribute('data-date')) {
+    while (el && !el.hasAttribute('data-day-col')) {
       el = el.parentElement
     }
 
@@ -150,11 +149,10 @@ export default function InteractiveEvent({
 
     if (!isDifferentDay) {
       // Clear any multi-day previews when returning to original day
-      if (currentTargetEndTime.current && currentTargetEndTime.current.getDate() !== new Date(event.startTime).getDate()) {
+      if (currentTargetEndTime.current && format(currentTargetEndTime.current, 'yyyy-MM-dd') !== originalDateStr) {
         window.dispatchEvent(new CustomEvent('pac-resize-end'))
       }
 
-      // Normal single-day resize: Delta from initial start point
       const deltaY = e.clientY - startY.current
       const snappedDeltaY = Math.round(deltaY / 12.75) * 12.75
       let newHeight = startHeight.current + snappedDeltaY
@@ -166,45 +164,42 @@ export default function InteractiveEvent({
       setDragHeight(newHeight)
       dragHeightRef.current = newHeight
       
-      // Compute logical time for logical update on release
       const totalMins = Math.round((newHeight / 51) * 60)
       currentTargetEndTime.current = new Date(new Date(event.startTime).getTime() + totalMins * 60000)
     } else {
       // Multi-day resize!
-      // 1. Fill the original day to midnight
       setDragHeight((24 * 51) - top)
       dragHeightRef.current = (24 * 51) - top
 
-      // 2. Calculate time on the NEW day
-      if (el) {
+      if (el && targetDateStr) {
         const rect = el.getBoundingClientRect()
         const y = e.clientY - rect.top
         const minutesOnNewDay = Math.max(0, Math.round(((y / 51) * 60) / 15) * 15)
         
-        const [yyyy, mm, dd] = targetDateStr!.split('-').map(Number)
+        const [yyyy, mm, dd] = targetDateStr.split('-').map(Number)
         const targetDayEnd = new Date(yyyy, mm - 1, dd)
         targetDayEnd.setHours(Math.floor(minutesOnNewDay / 60), minutesOnNewDay % 60, 0, 0)
         
         currentTargetEndTime.current = targetDayEnd
         
-        // Visual feedback via custom event for the target column's preview
+        // Broadcast entire span for all intermediary columns
         window.dispatchEvent(new CustomEvent('pac-resize-preview', { 
           detail: { 
+            startDate: originalDateStr,
             targetDate: targetDateStr, 
-            height: minutesOnNewDay * (51/60),
+            endHeight: minutesOnNewDay * (51/60),
             color: event.project ? event.project.color : 'var(--primary-color)'
           } 
         }))
 
-        // Visual feedback via toast during drag
         const timeStr = format(targetDayEnd, 'MMM d, h:mm a')
         window.dispatchEvent(new CustomEvent('pac-toast', { detail: `Target: ${timeStr}` }))
       } else {
-        // Fallback or cleanup if no valid column under cursor
         window.dispatchEvent(new CustomEvent('pac-resize-end'))
       }
     }
   }
+
 
   const handlePointerUp = async (e: PointerEvent) => {
     isResizing.current = false
