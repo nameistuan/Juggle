@@ -24,6 +24,13 @@ export default function InteractiveMonthEvent({
   const handleDragStart = (e: React.DragEvent) => {
     e.dataTransfer.setData('eventId', event.id)
     e.dataTransfer.setData('eventStartTime', event.startTime)
+    
+    // Safely encode and transport the true underlying duration so multiday events don't collapse to 1hr fallback!
+    const durationMs = event.endTime 
+      ? new Date(event.endTime).getTime() - new Date(event.startTime).getTime() 
+      : 3600000
+    e.dataTransfer.setData('eventDurationMs', durationMs.toString())
+    
     e.dataTransfer.effectAllowed = 'move'
     
     setTimeout(() => {
