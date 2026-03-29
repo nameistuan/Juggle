@@ -50,6 +50,13 @@ export default function InteractiveDayCol({ dateStr, className, children }: { da
       const dayEnd = new Date(dayStart)
       dayEnd.setDate(dayEnd.getDate() + 1)
 
+      // Strict boundary check to prevent midnight bleed into next day
+      if (resEnd.getTime() <= dayStart.getTime() || resStart.getTime() >= dayEnd.getTime()) {
+        setResizeY(null)
+        setResizeHeight(null)
+        return
+      }
+
       const actualStart = resStart < dayStart ? dayStart : resStart
       const actualEnd = resEnd > dayEnd ? dayEnd : resEnd
 

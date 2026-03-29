@@ -196,7 +196,7 @@ export default function InteractiveEvent({
       // Even if mouse is in the 24th hour of day N, don't let targetTime jump to midnight of day N+1
       // unless the user literally moves the cursor to day N+1
       if (minutesOnTargetDay === 24 * 60) {
-        targetTime.setHours(23, 59, 59, 999) 
+        targetTime.setHours(24, 0, 0, 0) 
       }
 
       const minEnd = new Date(actualStart.getTime() + 15 * 60000)
