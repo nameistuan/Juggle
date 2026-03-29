@@ -169,7 +169,7 @@ export default function InteractiveEvent({
   // Instantly materialize the true Server implementation without flashing by sensing a network-layer prop change
   useEffect(() => {
     if ((window as any).__pendingEventId === event.id) {
-      ;(window as any).__pendingEventId = null
+      // Do not consume the ID here! Other segments of a multiday event must also read it to unhide themselves!
       setIsHidden(false) // Data has arrived from the DB!
     }
   }, [event])

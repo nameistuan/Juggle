@@ -36,6 +36,11 @@ export default function InteractiveDayCol({ dateStr, className, children }: { da
     if (isPendingDrop) {
       setIsPendingDrop(false)
     }
+    
+    // Globally safely obliterate the pending ID after the React tree has finished propagating the data
+    setTimeout(() => {
+      ;(window as any).__pendingEventId = null
+    }, 50)
   }, [children])
 
   // Listen for multi-day resize previews
