@@ -5,31 +5,28 @@
   background-color: var(--surface-color);
 }
 
-.headerRow {
-  display: grid;
-  grid-template-columns: 60px repeat(7, 1fr);
-  border-bottom: 1px solid var(--border-color);
-  flex-shrink: 0;
-  overflow-y: scroll; /* Force track width to match body mathematically */
-  scrollbar-width: none; /* Firefox */
-}
-
-.headerRow::-webkit-scrollbar {
-  display: none; /* Chrome/Safari */
-}
-
 .timeColHeader {
   border-right: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--border-color);
+  position: sticky;
+  top: 0;
+  z-index: 20; /* High z-index to stay above scrolling content */
+  background-color: var(--surface-color);
 }
 
 .dayHeader {
   text-align: center;
   padding: 10px 0;
   border-right: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--border-color); /* Added bottom border natively */
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 4px;
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background-color: var(--surface-color);
 }
 
 .dayName {
@@ -57,17 +54,19 @@
 }
 
 .gridBody {
-  display: flex;
+  display: grid;
+  grid-template-columns: 60px repeat(7, 1fr);
+  grid-template-rows: auto 1fr;
   flex-grow: 1;
   overflow-y: auto;
+  position: relative; /* Context for nested absolute items */
 }
 
 .timeCol {
-  width: 60px;
-  flex-shrink: 0;
   border-right: 1px solid var(--border-color);
   position: relative;
   height: 1224px; /* Force bounds so border continues during scrolling */
+  grid-column: 1; /* Explicit placement */
 }
 
 .timeLabel {
@@ -78,11 +77,6 @@
   transform: translateY(-50%); /* Center on the line */
 }
 
-.daysContainer {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  flex-grow: 1;
-}
 
 .dayCol {
   border-right: 1px solid var(--border-color);

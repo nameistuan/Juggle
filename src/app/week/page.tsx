@@ -58,19 +58,17 @@ export default async function WeekView({
 
   return (
     <div className={styles.weekView}>
-      <div className={styles.headerRow}>
+      <div className={styles.gridBody}>
         <div className={styles.timeColHeader} />
         {daysInGrid.map(day => (
-          <div key={day.toISOString()} className={styles.dayHeader}>
+          <div key={`header-${day.toISOString()}`} className={styles.dayHeader}>
             <span className={styles.dayName}>{format(day, 'E')}</span>
             <span className={`${styles.dayNumber} ${isToday(day) ? styles.todayNum : ''}`}>
               {format(day, 'd')}
             </span>
           </div>
         ))}
-      </div>
       
-      <div className={styles.gridBody}>
         {/* Time Column */}
         <div className={styles.timeCol}>
           {hours.map(hour => (
@@ -81,8 +79,7 @@ export default async function WeekView({
         </div>
 
         {/* Days Grid */}
-        <div className={styles.daysContainer}>
-          {daysInGrid.map(day => {
+        {daysInGrid.map(day => {
             const dayStart = new Date(day)
             dayStart.setHours(0,0,0,0)
             const dayEnd = new Date(dayStart)
@@ -144,10 +141,9 @@ export default async function WeekView({
                     />
                   )
                 })}
-              </InteractiveDayCol>
-            )
-          })}
-        </div>
+                </InteractiveDayCol>
+              )
+            })}
       </div>
     </div>
   )
