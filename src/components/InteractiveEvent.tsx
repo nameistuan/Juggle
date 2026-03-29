@@ -271,7 +271,7 @@ export default function InteractiveEvent({
         right: '4px',
         zIndex: zIndex,
         outline: 'none',
-        boxShadow: isLayoutIndented ? '0 0 0 1.5px var(--surface-color), 0 4px 6px rgba(0,0,0,0.15), 0 1px 3px rgba(0,0,0,0.1)' : 'none', // Cutout gap + shadow
+        boxShadow: isLayoutIndented ? 'inset 0 0 0 1px rgba(0,0,0,0.05), 0 0 0 1.5px var(--surface-color), 0 4px 6px rgba(0,0,0,0.15), 0 1px 3px rgba(0,0,0,0.1)' : 'inset 0 0 0 1px rgba(0,0,0,0.1)', // Uniform inset shadow
         backgroundColor: event.project ? `${event.project.color}33` : 'var(--surface-hover)',
         backdropFilter: isLayoutIndented ? 'blur(8px)' : 'none',
         WebkitBackdropFilter: isLayoutIndented ? 'blur(8px)' : 'none',
@@ -284,7 +284,8 @@ export default function InteractiveEvent({
         overflow: 'hidden',
         fontSize: is15Min ? '0.65rem' : '0.75rem',
         lineHeight: 1.2,
-        padding: is15Min ? '0px 4px' : undefined
+        fontWeight: 500, // Balanced weight
+        padding: is15Min ? '0px 4px' : '4px 6px'
       }}
       draggable
       onDragStart={handleDragStart}

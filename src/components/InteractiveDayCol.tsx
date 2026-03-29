@@ -28,6 +28,9 @@ export default function InteractiveDayCol({ dateStr, className, children }: { da
   const [resizeTitle, setResizeTitle] = useState<string>('')
   const [resizeTime, setResizeTime] = useState<string>('')
 
+  const isMoreThanHourResize = resizeHeight !== null && resizeHeight > 55
+  const is15MinResize = resizeHeight !== null && resizeHeight <= 16
+
   // Wait rigorously for Next.js to fire a fresh layout payload containing the authentic Server Component element before collapsing our client-side snapshot model!
   useEffect(() => {
     if (isPendingDrop) {
@@ -305,7 +308,6 @@ export default function InteractiveDayCol({ dateStr, className, children }: { da
             backgroundColor: `${resizeColor}33`,
             color: resizeColor,
             borderLeft: `4px solid ${resizeColor}`,
-            borderBottom: `2px solid ${resizeColor}`,
             borderRadius: '4px',
             boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.1)',
             pointerEvents: 'none',
@@ -313,10 +315,10 @@ export default function InteractiveDayCol({ dateStr, className, children }: { da
             overflow: 'hidden',
             display: 'flex',
             flexDirection: 'column',
-            padding: '4px 6px',
-            fontSize: '0.75rem',
+            padding: is15MinResize ? '0px 4px' : '4px 6px',
+            fontSize: is15MinResize ? '0.65rem' : '0.75rem',
             lineHeight: 1.2,
-            fontWeight: 600
+            fontWeight: 500
           }}
         >
           <div style={{ textOverflow: 'ellipsis', whiteSpace: 'nowrap', overflow: 'hidden' }}>{resizeTitle || 'Untitled'}</div>
@@ -335,12 +337,13 @@ export default function InteractiveDayCol({ dateStr, className, children }: { da
             color: (window as any).__activeDragColor || 'var(--text-primary)',
             borderLeft: `4px solid ${(window as any).__activeDragColor || 'var(--border-color)'}`,
             borderRadius: '4px',
-            boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.1)',
+            boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.1), 0 10px 15px -3px rgba(0,0,0,0.1)',
             pointerEvents: 'none',
             zIndex: 100,
             overflow: 'hidden',
             fontSize: is15Min ? '0.65rem' : '0.75rem',
             lineHeight: 1.2,
+            fontWeight: 500,
             padding: is15Min ? '0px 4px' : '4px 6px',
             display: 'flex',
             flexDirection: 'column'
@@ -357,7 +360,7 @@ export default function InteractiveDayCol({ dateStr, className, children }: { da
             padding: linkPadding,
             overflow: 'hidden'
           }}>
-            <div style={{ fontWeight: 600, flexShrink: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            <div style={{ fontWeight: 500, flexShrink: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
               {(window as any).__activeDragTitle}
             </div>
             <div style={{ opacity: 0.8, flexShrink: 0, whiteSpace: 'nowrap' }}>
