@@ -18,7 +18,7 @@ export default function InteractiveDayCol({ dateStr, className, children }: { da
 
   const [resizeY, setResizeY] = useState<number | null>(null)
   const [resizeHeight, setResizeHeight] = useState<number | null>(null)
-  const [resizeColor, setResizeColor] = useState<string>('var(--primary-color)')
+  const [resizeColor, setResizeColor] = useState<string | null>(null)
   const [resizeTitle, setResizeTitle] = useState<string>('')
   const [resizeTime, setResizeTime] = useState<string>('')
 
@@ -86,11 +86,11 @@ export default function InteractiveDayCol({ dateStr, className, children }: { da
       }
     }
     const handleResizeEnd = () => {
-      // Keep ghost visible for a split second to cover the gap while router.refresh() happens
+      // Keep ghost visible generously to cover any gap while router.refresh() happens
       setTimeout(() => {
         setResizeY(null)
         setResizeHeight(null)
-      }, 200)
+      }, 800)
     }
 
     window.addEventListener('pac-resize-preview', handleResizePreview)
@@ -134,7 +134,7 @@ export default function InteractiveDayCol({ dateStr, className, children }: { da
         title: (window as any).__activeDragTitle || '',
         startTimeStr: snappedNewStartDate.toISOString(),
         targetEndTimeStr: new Date(snappedNewStartDate.getTime() + durationMs).toISOString(),
-        color: (window as any).__activeDragColor || 'var(--primary-color)'
+        color: (window as any).__activeDragColor || null
       } 
     }))
   }
@@ -172,6 +172,8 @@ export default function InteractiveDayCol({ dateStr, className, children }: { da
 
     setIsPendingDrop(true)
     
+    // Crucial: Register pending ID BEFORE terminating ghost so original event stays 100% hidden while waiting for refreshed DB data
+    ;(window as any).__pendingEventId = eventId
     window.dispatchEvent(new CustomEvent('pac-resize-end')) // Terminate ghost block
 
     try {
@@ -317,9 +319,9 @@ export default function InteractiveDayCol({ dateStr, className, children }: { da
             left: '2px',
             width: 'calc(100% - 8px)',
             height: `${resizeHeight}px`,
-            backgroundColor: `${resizeColor}33`,
-            color: resizeColor,
-            borderLeft: `4px solid ${resizeColor}`,
+            backgroundColor: resizeColor ? `${resizeColor}33` : 'var(--surface-hover)',
+            color: resizeColor || 'var(--text-primary)',
+            borderLeft: `4px solid ${resizeColor || 'var(--border-color)'}`,
             borderRadius: '4px',
             boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.1)',
             pointerEvents: 'none',

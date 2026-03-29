@@ -166,6 +166,14 @@ export default function InteractiveEvent({
     }
   }, [event.id])
 
+  // Instantly materialize the true Server implementation without flashing by sensing a network-layer prop change
+  useEffect(() => {
+    if ((window as any).__pendingEventId === event.id) {
+      ;(window as any).__pendingEventId = null
+      setIsHidden(false) // Data has arrived from the DB!
+    }
+  }, [event])
+
   const handlePointerMove = (e: PointerEvent) => {
     if (!isResizing.current) return
     
@@ -208,7 +216,7 @@ export default function InteractiveEvent({
           title: event.title,
           startTimeStr: actualStart.toISOString(),
           targetEndTimeStr: finalTargetTime.toISOString(),
-          color: event.project ? event.project.color : 'var(--primary-color)'
+          color: event.project ? event.project.color : null
         } 
       }))
     } else {
