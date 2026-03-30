@@ -14,7 +14,9 @@ export default function InteractiveEvent({
   className,
   assignedLeft = '2px',
   isLayoutIndented = false,
-  zIndex = 1
+  zIndex = 1,
+  isStartClipped = false,
+  isEndClipped = false
 }: { 
   event: any, 
   href: string, 
@@ -24,7 +26,9 @@ export default function InteractiveEvent({
   className: string,
   assignedLeft?: string,
   isLayoutIndented?: boolean,
-  zIndex?: number
+  zIndex?: number,
+  isStartClipped?: boolean,
+  isEndClipped?: boolean
 }) {
   const [isHidden, setIsHidden] = useState(false)
   const router = useRouter()
@@ -276,15 +280,19 @@ export default function InteractiveEvent({
         backdropFilter: isLayoutIndented ? 'blur(8px)' : 'none',
         WebkitBackdropFilter: isLayoutIndented ? 'blur(8px)' : 'none',
         color: event.project ? event.project.color : 'var(--text-primary)',
-        borderTop: isLayoutIndented ? '1px solid var(--border-color)' : 'none',
         borderRight: isLayoutIndented ? '1px solid var(--border-color)' : 'none',
-        borderBottom: isLayoutIndented ? '1px solid var(--border-color)' : 'none',
         borderLeft: `4px solid ${event.project ? event.project.color : 'var(--border-color)'}`,
         cursor: 'move',
         userSelect: 'none',
-        borderRadius: '4px',
+        borderTopLeftRadius: isStartClipped ? '0px' : '4px',
+        borderTopRightRadius: isStartClipped ? '0px' : '4px',
+        borderBottomLeftRadius: isEndClipped ? '0px' : '4px',
+        borderBottomRightRadius: isEndClipped ? '0px' : '4px',
+        borderTop: isStartClipped ? `2px dashed ${event.project ? event.project.color : 'rgba(0,0,0,0.5)'}` : (isLayoutIndented ? '1px solid var(--border-color)' : 'none'),
+        borderBottom: isEndClipped ? `2px dashed ${event.project ? event.project.color : 'rgba(0,0,0,0.5)'}` : (isLayoutIndented ? '1px solid var(--border-color)' : 'none'),
         overflow: 'hidden',
         fontSize: is15Min ? '0.65rem' : '0.75rem',
+        opacity: (isStartClipped || isEndClipped) ? 0.85 : 1, // Subtle aesthetic fade to convey linkage
         lineHeight: 1.2,
         fontWeight: 500, // Balanced weight
         padding: is15Min ? '0px 4px' : '4px 6px'
@@ -320,12 +328,14 @@ export default function InteractiveEvent({
         }}
       >
         <div style={{ fontWeight: 500, flexShrink: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-          {event.title}
+          {isStartClipped ? '(Cont.) ' + event.title : event.title}
         </div>
-        <div style={{ opacity: 0.8, fontSize: '0.7rem', flexShrink: 0, whiteSpace: 'nowrap' }}>
-          {format(new Date(event.startTime), 'h:mm a')} 
-          {isMoreThanHour && event.endTime && ` - ${format(new Date(event.endTime), 'h:mm a')}`}
-        </div>
+        {!isStartClipped && (
+          <div style={{ opacity: 0.8, fontSize: '0.7rem', flexShrink: 0, whiteSpace: 'nowrap' }}>
+            {format(new Date(event.startTime), 'h:mm a')} 
+            {isMoreThanHour && event.endTime && ` - ${format(new Date(event.endTime), 'h:mm a')}`}
+          </div>
+        )}
       </div>
       
       {/* Structural Resizer Hook */}

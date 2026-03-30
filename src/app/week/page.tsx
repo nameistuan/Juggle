@@ -58,7 +58,21 @@ export default async function WeekView({
     include: { project: true }
   });
 
+  // TOGGLE FOR NEW UX PARADIGMS
+  const ENABLE_NEW_MULTIDAY_UX = true
+
   const hours = Array.from({ length: 24 }).map((_, i) => i)
+
+  // Split into macroscopic and microscopic events safely
+  const isMacroscopic = (e: any) => {
+    if (!ENABLE_NEW_MULTIDAY_UX) return false
+    const eStart = new Date(e.startTime)
+    const eEnd = e.endTime ? new Date(e.endTime) : new Date(eStart.getTime() + 3600000)
+    return (eEnd.getTime() - eStart.getTime()) >= 24 * 3600000 // >= 24 Hours
+  }
+  
+  const macroscopicEvents = events.filter(isMacroscopic)
+  const microscopicEvents = events.filter(e => !isMacroscopic(e))
 
   return (
     <div className={styles.weekView}>
@@ -72,6 +86,49 @@ export default async function WeekView({
             </span>
           </div>
         ))}
+      
+        {/* All-Day / Macroscopic Horizontal Track */}
+        {ENABLE_NEW_MULTIDAY_UX && macroscopicEvents.length > 0 && (
+          <div className={styles.allDayTrack}>
+            {macroscopicEvents.map(event => {
+              const eStart = new Date(event.startTime)
+              const eEnd = event.endTime ? new Date(event.endTime) : new Date(eStart.getTime() + 3600000)
+              
+              const clippedStart = eStart < startDate ? startDate : eStart
+              const clippedEnd = eEnd > endDate ? endDate : eEnd
+              
+              // Find matching grid indices
+              const startIdx = daysInGrid.findIndex(d => {
+                const dayStr = format(d, 'yyyy-MM-dd')
+                const eStartStr = format(clippedStart, 'yyyy-MM-dd')
+                return dayStr === eStartStr
+              })
+              const endIdx = daysInGrid.findIndex(d => {
+                const dayStr = format(d, 'yyyy-MM-dd')
+                const eEndStr = format(new Date(clippedEnd.getTime() - 1), 'yyyy-MM-dd') // -1ms to prevent Midnight from pushing index to next day
+                return dayStr === eEndStr
+              })
+              
+              if (startIdx === -1 || endIdx === -1) return null;
+              const span = endIdx - startIdx + 1
+              
+              return (
+                <Link
+                  key={`macro-${event.id}`}
+                  href={getEventUrl(event.id)}
+                  className={styles.allDayEvent}
+                  style={{
+                    marginLeft: `calc(${startIdx} * 100% / ${daysInGrid.length})`,
+                    width: `calc(${span} * 100% / ${daysInGrid.length})`,
+                    backgroundColor: event.project ? event.project.color : 'var(--primary-color)'
+                  }}
+                >
+                  {event.title}
+                </Link>
+              )
+            })}
+          </div>
+        )}
       
         {/* Time Column */}
         <div className={styles.timeCol}>
@@ -91,7 +148,7 @@ export default async function WeekView({
 
             // Intersection-based filtering: event overlaps day if it starts before day ends AND ends after day starts
             // Using exclusive comparison (> and <) to prevent events exactly ending/starting at midnight from bleeding into the wrong day
-            const overlappingEvents = events.filter((e: any) => {
+            const overlappingEvents = microscopicEvents.filter((e: any) => {
               const eStart = new Date(e.startTime)
               const eEnd = e.endTime ? new Date(e.endTime) : new Date(eStart.getTime() + 3600000)
               return eStart < dayEnd && eEnd > dayStart
@@ -130,6 +187,9 @@ export default async function WeekView({
                   const top = (startHour * 51) + (startMin * (51 / 60))
                   const height = Math.max((durationMs / 3600000) * 51, 12) // clamp min height
 
+                  const isStartClipped = le.displayStart.getTime() !== le.fullStartTime.getTime()
+                  const isEndClipped = le.displayEnd.getTime() !== le.fullEndTime.getTime()
+
                   return (
                     <InteractiveEvent
                       key={`${le.id}-${dateStr}`}
@@ -141,6 +201,8 @@ export default async function WeekView({
                       assignedLeft={le.assignedLeft}
                       isLayoutIndented={le.isLayoutIndented}
                       zIndex={le.zIndex}
+                      isStartClipped={ENABLE_NEW_MULTIDAY_UX ? isStartClipped : false}
+                      isEndClipped={ENABLE_NEW_MULTIDAY_UX ? isEndClipped : false}
                       className={styles.eventBlock}
                     />
                   )
