@@ -333,13 +333,19 @@ export default function InteractiveEvent({
         {!isStartClipped && (
           <div style={{ opacity: 0.8, fontSize: '0.7rem', flexShrink: 0, whiteSpace: 'nowrap' }}>
             {(() => {
-              const startStr = format(new Date(event.startTime), 'h:mm a')
-              if (!isMoreThanHour || !event.endTime) return startStr
+              const actualStart = event.fullStartTime ? new Date(event.fullStartTime) : new Date(event.startTime)
+              const actualEnd = event.fullEndTime ? new Date(event.fullEndTime) : (event.endTime ? new Date(event.endTime) : null)
               
-              const isMultiday = format(new Date(event.startTime), 'yyyy-MM-dd') !== format(new Date(event.endTime), 'yyyy-MM-dd')
+              const startStr = format(actualStart, 'h:mm a')
+              
+              if (!actualEnd) return startStr
+              const trueDurationMs = actualEnd.getTime() - actualStart.getTime()
+              if (trueDurationMs <= 3600000 && dragHeight <= 55) return startStr
+              
+              const isMultiday = format(actualStart, 'yyyy-MM-dd') !== format(actualEnd, 'yyyy-MM-dd')
               const endStr = isMultiday 
-                ? format(new Date(event.endTime), 'EEE, h:mm a') 
-                : format(new Date(event.endTime), 'h:mm a')
+                ? format(actualEnd, 'EEE, h:mm a') 
+                : format(actualEnd, 'h:mm a')
                 
               return `${startStr} → ${endStr}`
             })()}
