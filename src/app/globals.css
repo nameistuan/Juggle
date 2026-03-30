@@ -20,6 +20,8 @@
     --surface-color: #1f2937;
     --text-primary: #f9fafb;
     --text-secondary: #9ca3af;
+    --hour-height: 38px;
+    --total-grid-height: calc(var(--hour-height) * 24);
     --border-color: #374151;
     --grid-border: #1f2937;
   }

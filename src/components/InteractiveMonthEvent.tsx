@@ -59,7 +59,16 @@ export default function InteractiveMonthEvent({
         style={{ backgroundColor: event.project ? event.project.color : 'var(--text-secondary)' }}
       />
       <span className={timeClassName}>
-        {format(new Date(event.fullStartTime), 'h:mma').toLowerCase()}
+        {(() => {
+          const actualStart = new Date(event.fullStartTime)
+          const actualEnd = new Date(event.fullEndTime)
+          const isMultiday = format(actualStart, 'yyyy-MM-dd') !== format(actualEnd, 'yyyy-MM-dd')
+          if (!isMultiday) return format(actualStart, 'h:mma').toLowerCase()
+          
+          const startStr = format(actualStart, 'EEE, h:mma').toLowerCase()
+          const endStr = format(actualEnd, 'EEE, h:mma').toLowerCase()
+          return `${startStr} → ${endStr}`
+        })()}
       </span>
       <span className={titleClassName}>
         {event.title}

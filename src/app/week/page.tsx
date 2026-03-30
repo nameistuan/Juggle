@@ -13,6 +13,7 @@ import InteractiveEvent from '@/components/InteractiveEvent'
 import { calculateEventLayout } from '@/lib/groupEvents'
 
 import { prepareEventsForGrid } from '@/lib/calendarEngine'
+import { HOUR_HEIGHT } from '@/lib/constants'
 
 export const dynamic = 'force-dynamic' 
 
@@ -78,7 +79,7 @@ export default async function WeekView({
         {/* Time Column */}
         <div className={styles.timeCol}>
           {hours.map(hour => (
-            <div key={hour} className={styles.timeLabel} style={{ top: `${hour * 51}px` }}>
+            <div key={hour} className={styles.timeLabel} style={{ top: `${hour * HOUR_HEIGHT}px` }}>
               {hour === 0 ? '' : format(new Date().setHours(hour, 0), 'ha')}
             </div>
           ))}
@@ -99,8 +100,8 @@ export default async function WeekView({
                   const startMin = le.displayStart.getMinutes()
                   
                   const durationMs = le.displayEnd.getTime() - le.displayStart.getTime()
-                  const top = (startHour * 51) + (startMin * (51 / 60))
-                  const height = Math.max((durationMs / 3600000) * 51, 12)
+                  const top = (startHour * HOUR_HEIGHT) + (startMin * (HOUR_HEIGHT / 60))
+                  const height = Math.max((durationMs / 3600000) * HOUR_HEIGHT, 12)
 
                   return (
                     <InteractiveEvent

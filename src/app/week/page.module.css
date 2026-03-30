@@ -65,8 +65,8 @@
 .timeCol {
   border-right: 1px solid var(--border-color);
   position: relative;
-  height: 1224px; /* Force bounds so border continues during scrolling */
-  grid-column: 1; /* Explicit placement */
+  height: var(--total-grid-height); 
+  grid-column: 1; 
 }
 
 .timeLabel {
@@ -74,17 +74,17 @@
   right: 8px;
   font-size: 0.7rem;
   color: var(--text-secondary);
-  transform: translateY(-50%); /* Center on the line */
+  transform: translateY(-50%); 
 }
 
 
 .dayCol {
   border-right: 1px solid var(--border-color);
   position: relative;
-  /* 24 hours * 51px = 1224px */
-  height: 1224px; 
-  background-image: linear-gradient(var(--border-color) 1px, transparent 1px);
-  background-size: 100% 51px; /* 1 hr = 51px */
+  height: var(--total-grid-height); 
+  background-image: linear-gradient(rgba(156, 163, 175, 0.15) 1px, transparent 1px);
+  background-size: 100% var(--hour-height); 
+  background-repeat: repeat;
 }
 
 .eventBlock {

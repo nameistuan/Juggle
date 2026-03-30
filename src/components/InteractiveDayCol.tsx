@@ -4,6 +4,7 @@ import React, { ReactNode, useState, useEffect, useRef, startTransition } from '
 import { useRouter } from 'next/navigation'
 import { format } from 'date-fns'
 import { updateEvent } from '@/lib/undoManager'
+import { HOUR_HEIGHT } from '@/lib/constants'
 
 export default function InteractiveDayCol({ dateStr, className, children }: { dateStr: string, className: string, children: ReactNode }) {
   const router = useRouter()
@@ -22,9 +23,9 @@ export default function InteractiveDayCol({ dateStr, className, children }: { da
   const [resizeTitle, setResizeTitle] = useState<string>('')
   const [resizeTime, setResizeTime] = useState<string>('')
 
-  const isMoreThanHourResize = resizeHeight !== null && resizeHeight > 55
-  const is30MinOrLessResize = resizeHeight !== null && resizeHeight <= 27
-  const is15MinResize = resizeHeight !== null && resizeHeight <= 16
+  const isMoreThanHourResize = resizeHeight !== null && resizeHeight > (HOUR_HEIGHT + 4)
+  const is30MinOrLessResize = resizeHeight !== null && resizeHeight <= (HOUR_HEIGHT / 2 + 2)
+  const is15MinResize = resizeHeight !== null && resizeHeight <= (HOUR_HEIGHT / 4 + 4)
 
   // Wait rigorously for Next.js to fire a fresh layout payload containing the authentic Server Component element before collapsing our client-side snapshot model!
   useEffect(() => {
@@ -75,7 +76,7 @@ export default function InteractiveDayCol({ dateStr, className, children }: { da
       const actualEndMs = Math.min(resEndMs, dayEndMs)
 
       if (actualStartMs < actualEndMs) {
-        const heightPx = ((actualEndMs - actualStartMs) / 3600000) * 51
+        const heightPx = ((actualEndMs - actualStartMs) / 3600000) * HOUR_HEIGHT
         // If height is negligible (< 1px), don't render. 
         // This stops sub-millisecond edge cases from showing a phantom block.
         if (heightPx < 1) {
@@ -83,14 +84,15 @@ export default function InteractiveDayCol({ dateStr, className, children }: { da
           setResizeHeight(null)
           return
         }
-        setResizeY(((actualStartMs - dayStartMs) / 3600000) * 51)
+        setResizeY(((actualStartMs - dayStartMs) / 3600000) * HOUR_HEIGHT)
         setResizeHeight(heightPx)
         setResizeColor(color)
         setResizeTitle(title)
         
         const isMultiday = format(resStart, 'yyyy-MM-dd') !== format(resEnd, 'yyyy-MM-dd')
+        const startStr = isMultiday ? format(resStart, 'EEE, h:mm a') : format(resStart, 'h:mm a')
         const endTimeStr = isMultiday ? format(resEnd, 'EEE, h:mm a') : format(resEnd, 'h:mm a')
-        const timeStr = `${format(resStart, 'h:mm a')} - ${endTimeStr}`
+        const timeStr = `${startStr} → ${endTimeStr}`
         setResizeTime(timeStr)
       } else {
         setResizeY(null)
@@ -127,7 +129,7 @@ export default function InteractiveDayCol({ dateStr, className, children }: { da
     let cursorYInCol = e.clientY - colRect.top
     if (cursorYInCol < 0) cursorYInCol = 0
     
-    const cursorDayOffsetMs = (cursorYInCol / 51) * 3600000
+    const cursorDayOffsetMs = (cursorYInCol / HOUR_HEIGHT) * 3600000
     const [yyyy, mm, dd] = dateStr.split('-').map(Number)
     const currentDayStart = new Date(yyyy, mm - 1, dd)
     const dragCursorTimeMs = currentDayStart.getTime() + cursorDayOffsetMs
@@ -171,7 +173,7 @@ export default function InteractiveDayCol({ dateStr, className, children }: { da
     let cursorYInCol = e.clientY - colRect.top
     if (cursorYInCol < 0) cursorYInCol = 0
     
-    const cursorDayOffsetMs = (cursorYInCol / 51) * 3600000
+    const cursorDayOffsetMs = (cursorYInCol / HOUR_HEIGHT) * 3600000
     const [yyyy, mm, dd] = dateStr.split('-').map(Number)
     const currentDayStart = new Date(yyyy, mm - 1, dd)
     const dragCursorTimeMs = currentDayStart.getTime() + cursorDayOffsetMs
@@ -220,13 +222,13 @@ export default function InteractiveDayCol({ dateStr, className, children }: { da
     const colRect = colRef.current.getBoundingClientRect()
     const y = e.clientY - colRect.top
     
-    const minutesLayout = (y / 51) * 60
+    const minutesLayout = (y / HOUR_HEIGHT) * 60
     const totalMinutesSnapped = Math.floor(minutesLayout / 15) * 15
-    const snappedPixelY = (totalMinutesSnapped / 60) * 51
+    const snappedPixelY = (totalMinutesSnapped / 60) * HOUR_HEIGHT
     
     setIsCreating(true)
     setCreateStartTop(snappedPixelY)
-    setCreateCurrentTop(snappedPixelY + 51 / 4)
+    setCreateCurrentTop(snappedPixelY + HOUR_HEIGHT / 4)
   }
 
   useEffect(() => {
@@ -237,9 +239,9 @@ export default function InteractiveDayCol({ dateStr, className, children }: { da
       const colRect = colRef.current.getBoundingClientRect()
       const y = e.clientY - colRect.top
       
-      const minutesLayout = (y / 51) * 60
+      const minutesLayout = (y / HOUR_HEIGHT) * 60
       const totalMinutesSnapped = Math.round(minutesLayout / 15) * 15
-      const snappedPixelY = Math.max(0, Math.min((totalMinutesSnapped / 60) * 51, (24 * 51)))
+      const snappedPixelY = Math.max(0, Math.min((totalMinutesSnapped / 60) * HOUR_HEIGHT, (24 * HOUR_HEIGHT)))
       
       setCreateCurrentTop(snappedPixelY)
     }
@@ -248,10 +250,10 @@ export default function InteractiveDayCol({ dateStr, className, children }: { da
       if (createStartTop !== null && createCurrentTop !== null) {
         const top = Math.min(createStartTop, createCurrentTop)
         const bottom = Math.max(createStartTop, createCurrentTop)
-        const durationPx = Math.max(bottom - top, 51 / 4)
+        const durationPx = Math.max(bottom - top, HOUR_HEIGHT / 4)
 
-        const startMinutes = (top / 51) * 60
-        const endMinutes = startMinutes + (durationPx / 51) * 60
+        const startMinutes = (top / HOUR_HEIGHT) * 60
+        const endMinutes = startMinutes + (durationPx / HOUR_HEIGHT) * 60
 
         const formatTime = (totalMinutes: number) => {
           const h = Math.floor(totalMinutes / 60)
@@ -295,7 +297,7 @@ export default function InteractiveDayCol({ dateStr, className, children }: { da
   }, [isCreating, createStartTop, createCurrentTop, dateStr, router])
 
   const drawTop = createStartTop !== null && createCurrentTop !== null ? Math.min(createStartTop, createCurrentTop) : 0
-  const drawHeight = createStartTop !== null && createCurrentTop !== null ? Math.max(Math.abs(createCurrentTop - createStartTop), 51 / 4) : 0
+  const drawHeight = createStartTop !== null && createCurrentTop !== null ? Math.max(Math.abs(createCurrentTop - createStartTop), HOUR_HEIGHT / 4) : 0
 
   return (
     <div 

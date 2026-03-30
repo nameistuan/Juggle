@@ -5,6 +5,7 @@ import { format } from 'date-fns'
 import { useRouter } from 'next/navigation'
 import { deleteEvent, updateEvent } from '@/lib/undoManager'
 import { EventSegment } from '@/lib/calendarEngine'
+import { HOUR_HEIGHT } from '@/lib/constants'
 
 export default function InteractiveEvent({ 
   event, 
@@ -85,7 +86,7 @@ export default function InteractiveEvent({
     
     const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
     const cursorYInCol = (e.clientY - rect.top) + top
-    const cursorDayOffsetMs = (cursorYInCol / 51) * 3600000
+    const cursorDayOffsetMs = (cursorYInCol / HOUR_HEIGHT) * 3600000
     
     const [yyyy, mm, dd] = dateStr.split('-').map(Number)
     const currentDayStart = new Date(yyyy, mm - 1, dd)
@@ -157,7 +158,7 @@ export default function InteractiveEvent({
     if (tDateStr) {
       const rect = el!.getBoundingClientRect()
       const y = e.clientY - rect.top
-      const rawMinutes = (y / 51) * 60
+      const rawMinutes = (y / HOUR_HEIGHT) * 60
       const minutesOnTargetDay = Math.max(0, Math.min(Math.round(rawMinutes / 15) * 15, 24 * 60))
       
       const [yyyy, mm, dd] = tDateStr.split('-').map(Number)
@@ -271,11 +272,10 @@ export default function InteractiveEvent({
           {(() => {
               const actualStart = new Date(event.fullStartTime)
               const actualEnd = new Date(event.fullEndTime)
-              const startStr = format(actualStart, 'h:mm a')
               const isMultiday = format(actualStart, 'yyyy-MM-dd') !== format(actualEnd, 'yyyy-MM-dd')
+              if (!isMultiday && dragHeight <= 55) return format(actualStart, 'h:mm a')
               
-              if (!isMultiday && dragHeight <= 55) return startStr
-              
+              const startStr = isMultiday ? format(actualStart, 'EEE, h:mm a') : format(actualStart, 'h:mm a')
               const endStr = isMultiday ? format(actualEnd, 'EEE, h:mm a') : format(actualEnd, 'h:mm a')
               return `${startStr} → ${endStr}`
             })()}
