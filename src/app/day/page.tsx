@@ -4,6 +4,7 @@ import {
   eachDayOfInterval,
   isToday,
   format,
+  startOfWeek,
   parseISO
 } from 'date-fns'
 import Link from 'next/link'
@@ -35,16 +36,16 @@ export default async function DayView({
     return `/day?${params.toString()}`
   }
   
-  // Set boundaries for the specific 4-day block
   const startDate = new Date(currentDate)
-  startDate.setDate(startDate.getDate() - 1) // 1st slot (Yesterday)
+  startDate.setDate(startDate.getDate() - 1)
   startDate.setHours(0,0,0,0)
   const endDate = new Date(currentDate)
-  endDate.setDate(endDate.getDate() + 2) // 4th slot (Tomorrow + 1)
+  endDate.setDate(endDate.getDate() + 2)
   endDate.setHours(23,59,59,999)
-
+  
   const daysInGrid = eachDayOfInterval({ start: startDate, end: endDate })
 
+  // Fetch real events
   const events = await prisma.event.findMany({
     where: {
       startTime: { gte: startDate, lte: endDate }
@@ -66,7 +67,7 @@ export default async function DayView({
             </span>
           </div>
         ))}
-        
+      
         {/* Time Column */}
         <div className={styles.timeCol}>
           {hours.map(hour => (
@@ -76,19 +77,22 @@ export default async function DayView({
           ))}
         </div>
 
-        {/* 4 Day Grid */}
+        {/* Days Grid */}
         {daysInGrid.map(day => {
             const dayStart = new Date(day)
             dayStart.setHours(0,0,0,0)
             const dayEnd = new Date(dayStart)
-            dayEnd.setDate(dayEnd.getDate() + 1)
+            dayEnd.setDate(dayEnd.getDate() + 1) // Exact midnight of the next day
 
+            // Intersection-based filtering: event overlaps day if it starts before day ends AND ends after day starts
+            // Using exclusive comparison (> and <) to prevent events exactly ending/starting at midnight from bleeding into the wrong day
             const overlappingEvents = events.filter((e: any) => {
               const eStart = new Date(e.startTime)
               const eEnd = e.endTime ? new Date(e.endTime) : new Date(eStart.getTime() + 3600000)
               return eStart < dayEnd && eEnd > dayStart
             })
             
+            // Map to 'layout' compatible objects but using clipped boundaries for the current day
             const daySpecificEvents = overlappingEvents.map((e: any) => {
               const eStart = new Date(e.startTime)
               const eEnd = e.endTime ? new Date(e.endTime) : new Date(eStart.getTime() + 3600000)
@@ -96,7 +100,16 @@ export default async function DayView({
               const clippedStart = eStart < dayStart ? dayStart : eStart
               const clippedEnd = eEnd > dayEnd ? dayEnd : eEnd
 
-              return { ...e, displayStart: clippedStart, displayEnd: clippedEnd, startTime: clippedStart, endTime: clippedEnd }
+              return {
+                ...e,
+                displayStart: clippedStart,
+                displayEnd: clippedEnd,
+                fullStartTime: eStart,
+                fullEndTime: eEnd,
+                // These will be used for layout calculations (overlap detection)
+                startTime: clippedStart,
+                endTime: clippedEnd
+              }
             })
 
             const layoutEvents = calculateEventLayout(daySpecificEvents)
@@ -104,32 +117,32 @@ export default async function DayView({
 
             return (
               <InteractiveDayCol key={day.toISOString()} dateStr={dateStr} className={styles.dayCol}>
-                {layoutEvents.map((event: any) => {
-                  const startHour = event.displayStart.getHours()
-                  const startMin = event.displayStart.getMinutes()
+                {layoutEvents.map((le: any) => {
+                  const startHour = le.displayStart.getHours()
+                  const startMin = le.displayStart.getMinutes()
                   
-                  const durationMs = event.displayEnd.getTime() - event.displayStart.getTime()
+                  const durationMs = le.displayEnd.getTime() - le.displayStart.getTime()
                   const top = (startHour * 51) + (startMin * (51 / 60))
-                  const height = Math.max((durationMs / 3600000) * 51, 12)
+                  const height = Math.max((durationMs / 3600000) * 51, 12) // clamp min height
 
                   return (
                     <InteractiveEvent
-                      key={event.id}
-                      event={event}
-                      href={getEventUrl(event.id)}
+                      key={`${le.id}-${dateStr}`}
+                      event={le}
+                      href={getEventUrl(le.id)}
                       dateStr={dateStr}
                       top={top}
                       height={height}
-                      assignedLeft={event.assignedLeft}
-                      isLayoutIndented={event.isLayoutIndented}
-                      zIndex={event.zIndex}
+                      assignedLeft={le.assignedLeft}
+                      isLayoutIndented={le.isLayoutIndented}
+                      zIndex={le.zIndex}
                       className={styles.eventBlock}
                     />
                   )
                 })}
-              </InteractiveDayCol>
-            )
-          })}
+                </InteractiveDayCol>
+              )
+            })}
       </div>
     </div>
   )
