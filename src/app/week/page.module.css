@@ -12,8 +12,6 @@
   top: 0;
   z-index: 20; /* High z-index to stay above scrolling content */
   background-color: var(--surface-color);
-  grid-row: 1;
-  grid-column: 1;
 }
 
 .dayHeader {
@@ -29,7 +27,6 @@
   top: 0;
   z-index: 20;
   background-color: var(--surface-color);
-  grid-row: 1;
 }
 
 .dayName {
@@ -59,7 +56,7 @@
 .gridBody {
   display: grid;
   grid-template-columns: 60px repeat(7, 1fr);
-  grid-template-rows: auto auto 1fr; /* 3 Rows: Headers, All-Day Track, Main Columns */
+  grid-template-rows: auto 1fr;
   flex-grow: 1;
   overflow-y: auto;
   position: relative; /* Context for nested absolute items */
@@ -70,7 +67,6 @@
   position: relative;
   height: 1224px; /* Force bounds so border continues during scrolling */
   grid-column: 1; /* Explicit placement */
-  grid-row: 3;
 }
 
 .timeLabel {
@@ -89,7 +85,6 @@
   height: 1224px; 
   background-image: linear-gradient(var(--border-color) 1px, transparent 1px);
   background-size: 100% 51px; /* 1 hr = 51px */
-  grid-row: 3;
 }
 
 .eventBlock {
@@ -109,36 +104,6 @@
 
 .eventBlock:hover {
   opacity: 0.9;
-}
-
-.allDayTrack {
-  grid-column: 2 / -1; /* Stretch across all 7 days */
-  grid-row: 2; /* Sit below headers */
-  position: sticky;
-  top: 66px; /* Below the headers */
-  z-index: 15;
-  background-color: var(--surface-color);
-  border-bottom: 2px solid var(--border-color);
-  min-height: 0px; /* Collapse if empty */
-  display: flex;
-  flex-direction: column;
-  padding: 4px 0;
-  gap: 2px;
-}
-
-.allDayEvent {
-  height: 20px;
-  border-radius: 4px;
-  font-size: 0.75rem;
-  font-weight: 500;
-  display: flex;
-  align-items: center;
-  padding: 0 8px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  cursor: pointer;
-  position: relative; /* Use relative metrics for offset */
 }
 
 .eventTitle {

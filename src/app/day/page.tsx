@@ -129,6 +129,9 @@ export default async function DayView({
                   const top = (startHour * 51) + (startMin * (51 / 60))
                   const height = Math.max((durationMs / 3600000) * 51, 12) // clamp min height
 
+                  const isStartClipped = le.displayStart.getTime() !== le.fullStartTime.getTime()
+                  const isEndClipped = le.displayEnd.getTime() !== le.fullEndTime.getTime()
+
                   return (
                     <InteractiveEvent
                       key={`${le.id}-${dateStr}`}
@@ -140,6 +143,8 @@ export default async function DayView({
                       assignedLeft={le.assignedLeft}
                       isLayoutIndented={le.isLayoutIndented}
                       zIndex={le.zIndex}
+                      isStartClipped={isStartClipped}
+                      isEndClipped={isEndClipped}
                       className={styles.eventBlock}
                     />
                   )
