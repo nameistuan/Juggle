@@ -328,12 +328,21 @@ export default function InteractiveEvent({
         }}
       >
         <div style={{ fontWeight: 500, flexShrink: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-          {isStartClipped ? '(Cont.) ' + event.title : event.title}
+          {isStartClipped ? `↳ ${event.title}` : event.title}
         </div>
         {!isStartClipped && (
           <div style={{ opacity: 0.8, fontSize: '0.7rem', flexShrink: 0, whiteSpace: 'nowrap' }}>
-            {format(new Date(event.startTime), 'h:mm a')} 
-            {isMoreThanHour && event.endTime && ` - ${format(new Date(event.endTime), 'h:mm a')}`}
+            {(() => {
+              const startStr = format(new Date(event.startTime), 'h:mm a')
+              if (!isMoreThanHour || !event.endTime) return startStr
+              
+              const isMultiday = format(new Date(event.startTime), 'yyyy-MM-dd') !== format(new Date(event.endTime), 'yyyy-MM-dd')
+              const endStr = isMultiday 
+                ? format(new Date(event.endTime), 'EEE, h:mm a') 
+                : format(new Date(event.endTime), 'h:mm a')
+                
+              return `${startStr} → ${endStr}`
+            })()}
           </div>
         )}
       </div>
