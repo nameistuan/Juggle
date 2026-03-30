@@ -78,19 +78,39 @@ export default async function DayView({
 
         {/* 4 Day Grid */}
         {daysInGrid.map(day => {
-            const dayEvents = events.filter((e: any) => format(e.startTime, 'yyyy-MM-dd') === format(day, 'yyyy-MM-dd'))
-            const layoutEvents = calculateEventLayout(dayEvents)
+            const dayStart = new Date(day)
+            dayStart.setHours(0,0,0,0)
+            const dayEnd = new Date(dayStart)
+            dayEnd.setDate(dayEnd.getDate() + 1)
+
+            const overlappingEvents = events.filter((e: any) => {
+              const eStart = new Date(e.startTime)
+              const eEnd = e.endTime ? new Date(e.endTime) : new Date(eStart.getTime() + 3600000)
+              return eStart < dayEnd && eEnd > dayStart
+            })
+            
+            const daySpecificEvents = overlappingEvents.map((e: any) => {
+              const eStart = new Date(e.startTime)
+              const eEnd = e.endTime ? new Date(e.endTime) : new Date(eStart.getTime() + 3600000)
+              
+              const clippedStart = eStart < dayStart ? dayStart : eStart
+              const clippedEnd = eEnd > dayEnd ? dayEnd : eEnd
+
+              return { ...e, displayStart: clippedStart, displayEnd: clippedEnd, startTime: clippedStart, endTime: clippedEnd }
+            })
+
+            const layoutEvents = calculateEventLayout(daySpecificEvents)
             const dateStr = format(day, 'yyyy-MM-dd')
 
             return (
               <InteractiveDayCol key={day.toISOString()} dateStr={dateStr} className={styles.dayCol}>
                 {layoutEvents.map((event: any) => {
-                  const startHour = event.startTime.getHours()
-                  const startMin = event.startTime.getMinutes()
+                  const startHour = event.displayStart.getHours()
+                  const startMin = event.displayStart.getMinutes()
                   
-                  const durationMs = event.endTime ? new Date(event.endTime).getTime() - event.startTime.getTime() : 3600000
+                  const durationMs = event.displayEnd.getTime() - event.displayStart.getTime()
                   const top = (startHour * 51) + (startMin * (51 / 60))
-                  const height = (durationMs / 3600000) * 51
+                  const height = Math.max((durationMs / 3600000) * 51, 12)
 
                   return (
                     <InteractiveEvent
