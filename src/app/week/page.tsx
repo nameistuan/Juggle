@@ -46,10 +46,14 @@ export default async function WeekView({
   
   const daysInGrid = eachDayOfInterval({ start: startDate, end: endDate })
 
-  // Fetch real events
+  // Fetch real events using robust overlapping temporal boundaries!
+  // It handles items that started *before* the week but overlap into it.
   const events = await prisma.event.findMany({
     where: {
-      startTime: { gte: startDate, lte: endDate }
+      AND: [
+        { startTime: { lte: endDate } },
+        { endTime: { gte: startDate } }
+      ]
     },
     include: { project: true }
   });

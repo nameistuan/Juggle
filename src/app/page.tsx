@@ -56,10 +56,10 @@ export default async function MonthView({
   // 3. Fetch real events from database for this specific visual range
   const events = await prisma.event.findMany({
     where: {
-      startTime: {
-        gte: startDate,
-        lte: endDate,
-      }
+      AND: [
+        { startTime: { lte: endDate } },
+        { endTime: { gte: startDate } }
+      ]
     },
     include: {
       project: true // Bring in the Tags/Colors
@@ -71,9 +71,16 @@ export default async function MonthView({
     // Isolate events that occur on this exact day
     const dayDateString = format(day, 'yyyy-MM-dd');
     
+    // Mathematically intersect spans so long events duplicate across month-cells correctly!
+    const dayStart = new Date(day)
+    dayStart.setHours(0,0,0,0)
+    const dayEnd = new Date(dayStart)
+    dayEnd.setDate(dayEnd.getDate() + 1)
+    
     const dayEvents = events.filter((e: any) => {
-      const eventDateString = format(e.startTime, 'yyyy-MM-dd');
-      return eventDateString === dayDateString;
+      const eStart = new Date(e.startTime)
+      const eEnd = new Date(e.endTime)
+      return eStart < dayEnd && eEnd > dayStart
     }).sort((a: any, b: any) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime());
 
     return {
