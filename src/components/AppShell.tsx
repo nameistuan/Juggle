@@ -2,7 +2,8 @@
 
 import { useState, useRef, useEffect, startTransition, useMemo } from 'react'
 import { useSearchParams, useRouter, usePathname } from 'next/navigation'
-import { format, addMonths, subMonths, addWeeks, subWeeks, addDays, subDays, parseISO, startOfWeek } from 'date-fns'
+import { format, addMonths, subMonths, addWeeks, subWeeks, addDays, subDays, startOfWeek } from 'date-fns'
+import { getStableNow, parseAnchorDate } from '@/lib/dateUtils'
 import styles from './AppShell.module.css'
 import EventModal from './EventModal'
 import ProjectSidebar from './ProjectSidebar'
@@ -60,22 +61,23 @@ export default function AppShell({
   }, [sidebarWidth, isSidebarOpen, isMounted])
 
   // Hydration-Stable 'Now' Reference: Stabilize timezone noise by forcing a noon-UTC anchor
-  const [nowStable] = useState(() => {
-    const d = new Date()
-    return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), 12, 0, 0))
-  })
+  const [nowStable] = useState(() => getStableNow())
 
+  const hasDateParam = searchParams.get('date')
   const currentDate = useMemo(() => {
-    if (dateParam) return parseISO(`${dateParam}T12:00:00Z`)
-    if (monthParam) return parseISO(`${monthParam}-01T12:00:00Z`)
-    
-    // When on an empty path, default logically to the stable 'Now' reference
-    if (pathname === '/week') return startOfWeek(nowStable, { weekStartsOn: 0 })
-    return nowStable
-  }, [dateParam, monthParam, pathname, nowStable])
+    return parseAnchorDate(hasDateParam)
+  }, [hasDateParam, nowStable])
 
   const [internalDate, setInternalDate] = useState<Date>(currentDate)
-  useEffect(() => { setInternalDate(currentDate) }, [currentDate.getTime()])
+  useEffect(() => { setInternalDate(currentDate) }, [currentDate.toISOString()])
+
+  // Launch Redirect: If the user visits without a date, the client (who knows local 'Now') sets it.
+  useEffect(() => {
+    if (isMounted && !hasDateParam) {
+      const todayStr = format(getStableNow(), 'yyyy-MM-dd')
+      router.replace(`${pathname}?date=${todayStr}`, { scroll: false })
+    }
+  }, [isMounted, hasDateParam, pathname, router])
 
   const handlePrev = () => {
     let prev = internalDate

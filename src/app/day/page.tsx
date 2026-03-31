@@ -7,6 +7,7 @@ import {
   startOfWeek,
   parseISO
 } from 'date-fns'
+import { parseAnchorDate } from '@/lib/dateUtils'
 import Link from 'next/link'
 import InteractiveDayCol from '@/components/InteractiveDayCol'
 import InteractiveEvent from '@/components/InteractiveEvent'
@@ -24,13 +25,7 @@ export default async function DayView({
   searchParams: Promise<{ month?: string, date?: string }>
 }) {
   const resolvedParams = await searchParams
-  
-  let currentDate = new Date()
-  if (resolvedParams.date) {
-    currentDate = parseISO(`${resolvedParams.date}T12:00:00Z`)
-  } else if (resolvedParams.month) {
-    currentDate = parseISO(`${resolvedParams.month}-01T12:00:00Z`)
-  }
+  const currentDate = parseAnchorDate(resolvedParams.date)
   
   const getEventUrl = (eventId: string) => {
     const params = new URLSearchParams()
