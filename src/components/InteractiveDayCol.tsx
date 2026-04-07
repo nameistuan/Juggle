@@ -30,8 +30,25 @@ export default function InteractiveDayCol({ dateStr, className, children, style 
       setNowFraction(now.getHours() + now.getMinutes() / 60)
     }
     update()
-    const interval = setInterval(update, 60000)
-    return () => clearInterval(interval)
+
+    let timeoutId: ReturnType<typeof setTimeout>
+    let intervalId: ReturnType<typeof setInterval>
+
+    // Calculate time until the top of the very next minute
+    const now = new Date()
+    const msUntilNextMinute = 60000 - (now.getSeconds() * 1000 + now.getMilliseconds())
+
+    // Wait exactly until the next minute rolls over
+    timeoutId = setTimeout(() => {
+      update()
+      // From then on, sync comfortably every exactly 60 seconds
+      intervalId = setInterval(update, 60000)
+    }, msUntilNextMinute)
+
+    return () => {
+      clearTimeout(timeoutId)
+      clearInterval(intervalId)
+    }
   }, [dateStr])
 
   // Drag-to-create state
@@ -159,7 +176,7 @@ export default function InteractiveDayCol({ dateStr, className, children, style 
         title: (window as any).__activeDragTitle || '',
         startTimeStr: snappedNewStartDate.toISOString(),
         targetEndTimeStr: new Date(snappedNewStartDate.getTime() + durationMs).toISOString(),
-        color: (window as any).__activeDragColor || null
+        color: (window as any).__activeDragColor || '#4285f4'
       } 
     }))
   }
@@ -461,15 +478,15 @@ export default function InteractiveDayCol({ dateStr, className, children, style 
             height: `max(16px, calc(var(--hour-height) * ${resizeHeightFraction}))`,
             left: '2px',
             right: '6px',
-            backgroundColor: resizeColor ? `${resizeColor}33` : 'var(--surface-hover)', 
-            border: `1px solid ${resizeColor || 'var(--border-color)'}`,
-            borderLeft: `4px solid ${resizeColor || 'var(--border-color)'}`, 
+            backgroundColor: resizeColor ? `${resizeColor}33` : '#4285f433', 
+            border: `1px solid ${resizeColor || '#4285f4'}`,
+            borderLeft: `4px solid ${resizeColor || '#4285f4'}`, 
             borderRadius: '4px',
             zIndex: 45, 
             pointerEvents: 'none',
             boxShadow: '0 8px 16px rgba(0,0,0,0.15)',
             padding: resizeHeightFraction <= 0.25 ? '0px 4px' : '4px 6px',
-            color: resizeColor || 'var(--text-primary)',
+            color: resizeColor || '#4285f4',
             fontSize: resizeHeightFraction <= 0.25 ? '0.7rem' : '0.85rem',
             overflow: 'hidden'
           }}

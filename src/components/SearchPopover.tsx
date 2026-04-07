@@ -86,7 +86,7 @@ export default function SearchPopover({ onClose }: { onClose: () => void }) {
               <button key={ev.id} className={styles.result} onClick={() => openEvent(ev)}>
                 <span
                   className={styles.dot}
-                  style={{ backgroundColor: ev.project?.color ?? 'var(--text-secondary)' }}
+                  style={{ backgroundColor: ev.project?.color ?? '#4285f4' }}
                 />
                 <span className={styles.resultTitle}>{ev.title}</span>
                 <span className={styles.resultTime}>{formatTime(ev)}</span>

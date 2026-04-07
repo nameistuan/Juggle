@@ -15,11 +15,13 @@ export default function AppShell({
   children,
   defaultSidebarOpen = true,
   defaultSidebarWidth = 250,
+  defaultGridScale = 1,
   initialProjects = []
 }: {
   children: React.ReactNode,
   defaultSidebarOpen?: boolean,
   defaultSidebarWidth?: number,
+  defaultGridScale?: number,
   initialProjects?: { id: string; name: string; color: string }[]
 }) {
   const [sidebarWidth, setSidebarWidth] = useState(defaultSidebarWidth)
@@ -27,7 +29,7 @@ export default function AppShell({
   const [isMounted, setIsMounted] = useState(false)
   const [isEventModalOpen, setIsEventModalOpen] = useState(false)
   const [isSearchOpen, setIsSearchOpen] = useState(false)
-  const [gridScale, setGridScale] = useState(1)
+  const [gridScale, setGridScale] = useState(defaultGridScale)
   const [toast, setToast] = useState<string | null>(null)
   const searchParams = useSearchParams()
   const router = useRouter()
@@ -53,10 +55,11 @@ export default function AppShell({
     if (isMounted) {
       document.cookie = `pac_sidebar_width=${sidebarWidth}; path=/; max-age=31536000`
       document.cookie = `pac_sidebar_open=${isSidebarOpen}; path=/; max-age=31536000`
+      document.cookie = `pac_grid_scale=${gridScale}; path=/; max-age=31536000`
     } else {
       setIsMounted(true)
     }
-  }, [sidebarWidth, isSidebarOpen, isMounted])
+  }, [sidebarWidth, isSidebarOpen, gridScale, isMounted])
 
   // URL as the sole source of truth for the date
   const dateParam = searchParams.get('date')
@@ -183,10 +186,12 @@ export default function AppShell({
 
   useEffect(() => {
     const handleWheel = (e: WheelEvent) => {
-      // Zoom with Cmd (Mac) or Ctrl
-      if (e.metaKey || e.ctrlKey) {
+      // Zoom with Cmd (Mac MetaKey) ONLY.
+      if (e.metaKey && !e.ctrlKey) {
         e.preventDefault()
-        const delta = e.deltaY > 0 ? -0.1 : 0.1
+        // Proportional scaling for a smoother, less sensitive experience
+        const sensitivity = 0.001
+        const delta = -e.deltaY * sensitivity
         setGridScale(prev => Math.max(0.5, Math.min(3, prev + delta)))
       }
     }
@@ -205,6 +210,7 @@ export default function AppShell({
     return () => window.removeEventListener('pac-event-deleted', handleExternalDelete)
   }, [editEventId])
 
+  // Synchronize dynamic hour height
   useEffect(() => {
     document.documentElement.style.setProperty('--hour-height', `${38 * gridScale}px`)
     document.documentElement.style.setProperty('--total-grid-height', `calc(var(--hour-height) * 24)`)

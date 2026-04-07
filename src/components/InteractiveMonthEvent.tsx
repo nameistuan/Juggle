@@ -3,6 +3,7 @@
 import React, { useRef } from 'react'
 import Link from 'next/link'
 import { format } from 'date-fns'
+import { useSearchParams } from 'next/navigation'
 import { EventSegment } from '@/lib/calendarEngine'
 
 export default function InteractiveMonthEvent({ 
@@ -21,6 +22,9 @@ export default function InteractiveMonthEvent({
   titleClassName: string
 }) {
   const badgeRef = useRef<HTMLAnchorElement>(null)
+  const searchParams = useSearchParams()
+  const editEventId = searchParams.get('editEvent')
+  const draftPColor = searchParams.get('pColor')
 
   const handleDragStart = (e: React.DragEvent) => {
     const actualStart = new Date(event.fullStartTime)
@@ -56,7 +60,7 @@ export default function InteractiveMonthEvent({
     >
       <div 
         className={dotClassName} 
-        style={{ backgroundColor: event.project ? event.project.color : 'var(--text-secondary)' }}
+        style={{ backgroundColor: (editEventId === event.id && draftPColor) ? draftPColor : (event.project ? event.project.color : 'var(--text-secondary)') }}
       />
       <span className={timeClassName}>
         {(() => {

@@ -218,6 +218,151 @@
   margin-top: 4px;
 }
 
+.tagCarousel {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+/* Inline Project Creator */
+.inlineCreateForm {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background-color: #f1f3f4;
+  padding: 4px 8px;
+  border-radius: 16px;
+  border: 1px solid #dadce0;
+  width: 100%;
+  position: relative;
+}
+
+.createInput {
+  flex: 1;
+  border: none;
+  background: transparent;
+  outline: none;
+  font-size: 0.85rem;
+  color: #3c4043;
+}
+
+.createInput::placeholder {
+  color: #80868b;
+}
+
+.customColorBtn {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 1px solid rgba(0,0,0,0.1);
+  cursor: pointer;
+  position: relative;
+  flex-shrink: 0;
+  transition: transform 0.2s;
+}
+
+.deleteProjectBtn {
+  background: transparent;
+  border: none;
+  color: #ea4335;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s;
+  opacity: 0.7;
+}
+
+.deleteProjectBtn:hover {
+  background-color: rgba(234, 67, 53, 0.1);
+  opacity: 1;
+}
+
+.customColorBtn:hover {
+  transform: scale(1.1);
+}
+
+.customColorPopover {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.15), 0 0 0 1px rgba(0,0,0,0.05);
+  padding: 12px;
+  z-index: 1001;
+  width: 200px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  animation: popIn 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.colorGrid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+}
+
+.colorChip {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: transform 0.15s;
+  border: 1px solid rgba(0,0,0,0.05);
+}
+
+.colorChip:hover {
+  transform: scale(1.1);
+}
+
+.colorChipActive {
+  box-shadow: inset 0 0 0 2px white, 0 0 0 2px var(--primary-color);
+}
+
+.hexInput {
+  border: 1px solid #dadce0;
+  border-radius: 6px;
+  padding: 6px 8px;
+  font-size: 0.8rem;
+  color: #3c4043;
+  width: 100%;
+  outline: none;
+  font-family: monospace;
+}
+
+.hexInput:focus {
+  border-color: var(--primary-color);
+}
+
+.createBtn {
+  font-size: 0.8rem;
+  font-weight: 500;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--primary-color);
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+.createBtn:hover { background-color: rgba(66, 133, 244, 0.1); }
+
+.cancelCreateBtn {
+  font-size: 0.8rem;
+  font-weight: 500;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #5f6368;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+.cancelCreateBtn:hover { background-color: rgba(95, 99, 104, 0.1); }
+
 .pillBtnMinimal {
   padding: 4px 10px;
   border-radius: 6px;
@@ -269,8 +414,14 @@
   display: flex;
   gap: 8px;
   overflow-x: auto;
-  padding: 4px 0;
-  scrollbar-width: none;
+  padding: 8px 0;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE 10+ */
+  flex-wrap: nowrap;
+  scroll-snap-type: x mandatory;
+}
+.tagCarousel::-webkit-scrollbar {
+  display: none; /* Chrome/Safari */
 }
 
 .tagPill {
@@ -301,22 +452,141 @@
   border: 1.5px solid rgba(0,0,0,0.05);
 }
 
+.editPillIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 6px;
+  padding: 4px;
+  border-radius: 50%;
+  color: #5f6368;
+  transition: all 0.2s;
+}
+
+.editPillIcon:hover {
+  background-color: rgba(0,0,0,0.05);
+  color: #202124;
+}
+
 /* Field Rows */
 .fieldBox {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: 16px;
-  padding: 8px 0;
-  margin-top: 4px;
+  padding: 12px 0;
+  border-bottom: 1px solid #f1f3f4;
 }
 
-.fieldBox:focus-within {
-  border-bottom-color: #1a237e;
+.descriptionBox {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  flex-direction: column;
+  padding: 12px 0;
+  /* Top border logic handled by the field before it or parent */
+}
+
+.descriptionBoxInner {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  width: 100%;
+}
+
+/* Kanban Markdown Toolbar */
+.markdownToolbar {
+  display: flex;
+  gap: 4px;
+  margin-left: 36px; /* align with text area past the icon */
+  margin-bottom: -4px;
+  opacity: 0.6;
+  transition: opacity 0.2s;
+}
+
+.markdownToolbar:hover,
+.fieldBox:focus-within .markdownToolbar,
+.descriptionBox:focus-within .markdownToolbar {
+  opacity: 1;
+}
+
+.toolbarBtn {
+  background: transparent;
+  border: none;
+  color: #5f6368;
+  border-radius: 4px;
+  padding: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.toolbarBtn:hover {
+  background-color: #f1f3f4;
+  color: #202124;
+}
+
+.toolbarBtnActive {
+  background-color: rgba(66, 133, 244, 0.1);
+  color: var(--primary-color);
+}
+
+.tiptapEditor {
+  min-height: 80px;
+  outline: none;
+  font-size: 0.95rem;
+  color: #3c4043;
+  line-height: 1.5;
+  cursor: text;
+  width: 100%;
+}
+
+.tiptapEditor p {
+  margin: 0 0 0.5em 0;
+}
+.tiptapEditor p:last-child {
+  margin: 0;
+}
+
+.tiptapEditor ul, 
+.tiptapEditor ol {
+  padding-left: 1.5rem;
+  margin: 0.5em 0;
+}
+
+/* Custom Checklist Styling */
+.tiptapEditor ul[data-type="taskList"] {
+  list-style: none;
+  padding: 0;
+}
+
+.tiptapEditor ul[data-type="taskList"] li {
+  display: flex;
+  align-items: flex-start;
+  margin-bottom: 0.2rem;
+}
+
+.tiptapEditor ul[data-type="taskList"] li > label {
+  flex: 0 0 auto;
+  margin-right: 0.5rem;
+  user-select: none;
+  margin-top: 0.2rem;
+}
+
+.tiptapEditor ul[data-type="taskList"] li > label input[type="checkbox"] {
+  cursor: pointer;
+  width: 16px;
+  height: 16px;
+  accent-color: var(--primary-color);
+}
+
+.tiptapEditor ul[data-type="taskList"] li > div {
+  flex: 1 1 auto;
 }
 
 .fieldIcon {
   color: #5f6368;
-  margin-top: 2px;
+  margin-top: 10px;
   flex-shrink: 0;
 }
 

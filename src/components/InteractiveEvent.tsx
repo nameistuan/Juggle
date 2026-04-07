@@ -2,7 +2,7 @@
 
 import React, { useRef, useState, useEffect, startTransition } from 'react'
 import { format } from 'date-fns'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { deleteEvent, updateEvent } from '@/lib/undoManager'
 
 export default function InteractiveEvent({ 
@@ -38,6 +38,9 @@ export default function InteractiveEvent({
   const justResized = useRef(false)
   const startY = useRef(0)
   const currentTargetEndTime = useRef<Date | null>(null)
+  const searchParams = useSearchParams()
+  const editEventId = searchParams.get('editEvent')
+  const draftPColor = searchParams.get('pColor')
 
   const [currentScale, setCurrentScale] = useState(1)
 
@@ -146,7 +149,7 @@ export default function InteractiveEvent({
     ;(window as any).__activeDragCursorOffsetMs = cursorOffsetFromStartMs
     ;(window as any).__activeDragDuration = durationMs
     ;(window as any).__activeDragTitle = event.title
-    ;(window as any).__activeDragColor = event.project ? event.project.color : null
+    ;(window as any).__activeDragColor = event.project?.color ?? '#4285f4'
     
     // Stale-Lock: Capture the CURRENT time before the move, to keep all segments hidden until the change arrives
     if (!(window as any).__staleEvents) (window as any).__staleEvents = {}
@@ -200,7 +203,7 @@ export default function InteractiveEvent({
       window.dispatchEvent(new CustomEvent('pac-resize-preview', { 
         detail: { 
           id: event.id, title: event.title, startTimeStr: actualStart.toISOString(), targetEndTimeStr: finalTargetTime.toISOString(),
-          color: event.project ? event.project.color : null
+          color: event.project?.color ?? '#4285f4'
         } 
       }))
     }
@@ -250,17 +253,17 @@ export default function InteractiveEvent({
         right: '6px',
         zIndex: zIndex,
         boxShadow: isLayoutIndented ? 'inset 0 0 0 1px rgba(0,0,0,0.05), 0 0 0 1.5px var(--surface-color), 0 4px 6px rgba(0,0,0,0.15), 0 1px 3px rgba(0,0,0,0.1)' : 'inset 0 0 0 1px rgba(0,0,0,0.1)',
-        backgroundColor: event.project ? `${event.project.color}33` : 'var(--surface-hover)',
-        color: event.project ? event.project.color : 'var(--text-primary)',
-        borderLeft: `4px solid ${event.project ? event.project.color : 'var(--border-color)'}`,
+        backgroundColor: (editEventId === event.id && draftPColor) ? `${draftPColor}33` : `${event.project?.color ?? '#4285f4'}33`,
+        color: (editEventId === event.id && draftPColor) ? draftPColor : (event.project?.color ?? '#4285f4'),
+        borderLeft: `4px solid ${(editEventId === event.id && draftPColor) ? draftPColor : (event.project?.color ?? '#4285f4')}`,
         cursor: 'move',
         userSelect: 'none',
         borderTopLeftRadius: isStartClipped ? '0px' : '4px',
         borderTopRightRadius: isStartClipped ? '0px' : '4px',
         borderBottomLeftRadius: isEndClipped ? '0px' : '4px',
         borderBottomRightRadius: isEndClipped ? '0px' : '4px',
-        borderTop: isStartClipped ? `2px dashed ${event.project ? event.project.color : 'rgba(0,0,0,0.5)'}` : (isLayoutIndented ? '1px solid var(--border-color)' : 'none'),
-        borderBottom: isEndClipped ? `2px dashed ${event.project ? event.project.color : 'rgba(0,0,0,0.5)'}` : (isLayoutIndented ? '1px solid var(--border-color)' : 'none'),
+        borderTop: isStartClipped ? `2px dashed ${event.project?.color ?? '#4285f4'}` : (isLayoutIndented ? '1px solid var(--border-color)' : 'none'),
+        borderBottom: isEndClipped ? `2px dashed ${event.project?.color ?? '#4285f4'}` : (isLayoutIndented ? '1px solid var(--border-color)' : 'none'),
         overflow: 'hidden',
         fontSize: is15Min ? '0.7rem' : '0.85rem',
         padding: is15Min ? '0px 4px' : '4px 6px'

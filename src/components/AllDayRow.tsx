@@ -45,9 +45,9 @@ export default function AllDayRow({
                 key={ev.id}
                 className={styles.chip}
                 style={{
-                  backgroundColor: ev.project ? `${ev.project.color}22` : 'var(--surface-hover)',
-                  borderLeft: `3px solid ${ev.project?.color ?? 'var(--border-color)'}`,
-                  color: ev.project?.color ?? 'var(--text-primary)',
+                  backgroundColor: `${ev.project?.color ?? '#4285f4'}22`,
+                  borderLeft: `3px solid ${ev.project?.color ?? '#4285f4'}`,
+                  color: ev.project?.color ?? '#4285f4',
                 }}
                 onClick={() => openEvent(ev.id)}
               >
