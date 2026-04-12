@@ -1,4 +1,4 @@
-# Juggle (Formerly PAC)
+# Juggle
 
 A revolutionary productivity command center that seamlessly merges a robust Kanban task manager with a highly polished calendar grid using a continuous "Unified Canvas" paradigm.
 

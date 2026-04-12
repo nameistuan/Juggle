@@ -8,8 +8,8 @@ import prisma from '@/lib/prisma'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'PAC | Personalized Assisted Calendar',
-  description: 'Project management and calendar application with AI integration',
+  title: 'Juggle',
+  description: 'Project management and calendar application for seamless scheduling',
 }
 
 export default async function RootLayout({
