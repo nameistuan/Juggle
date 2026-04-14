@@ -274,6 +274,14 @@ export default function InteractiveEvent({
       onClick={(e) => {
         e.stopPropagation()
         if (justResized.current) return
+
+        // Check for unsaved changes before switching
+        if (typeof window !== 'undefined' && (window as any).__isJuggleModalDirty) {
+          const confirmDiscard = window.confirm("You have unsaved changes in the current task/event. Do you want to discard them?")
+          if (!confirmDiscard) return
+          ;(window as any).__isJuggleModalDirty = false
+        }
+
         let anchorParams = ''
         if (blockRef.current) {
           const rect = blockRef.current.getBoundingClientRect()

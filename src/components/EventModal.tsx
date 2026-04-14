@@ -18,7 +18,18 @@ interface Project {
   color: string;
 }
 
-type ModalType = 'event' | 'task' | 'reminder';
+type ModalType = 'event' | 'task' | 'reminder'
+
+function isKeyboardTypingTarget(target: EventTarget | null): boolean {
+  const el = target instanceof HTMLElement ? target : null
+  if (!el) return false
+  if (el.closest('button, a[href], [role="button"]')) return true
+  const t = el.tagName
+  if (t === 'INPUT' || t === 'TEXTAREA' || t === 'SELECT') return true
+  if (el.isContentEditable) return true
+  if (el.closest('[contenteditable="true"]')) return true
+  return false
+}
 
 export default function EventModal({ 
   eventId, 
@@ -118,10 +129,41 @@ export default function EventModal({
   // --- 5. LOGIC HELPERS ---
   const isDirty = () => {
     if (!hasInitializedValues || !initialValues.current) return false
-    const current = {
-      title, description, location, startDate, endDate, startTime, endTime, isFluid, projectId, modalType
+    
+    const norm = (val: any) => (val === null || val === undefined) ? '' : String(val).trim()
+    const normDesc = (val: string) => {
+      const v = norm(val)
+      return (v === '<p></p>' || v === '<p></p>\n') ? '' : v
     }
-    return JSON.stringify(current) !== JSON.stringify(initialValues.current)
+
+    const current = {
+      title: norm(title),
+      description: normDesc(description),
+      location: norm(location),
+      startDate, endDate, startTime, endTime, isFluid, 
+      projectId: norm(projectId), 
+      modalType
+    }
+    
+    const baseline = {
+      title: norm(initialValues.current.title),
+      description: normDesc(initialValues.current.description),
+      location: norm(location), // Note: using current location vs initial if we wanted strict, but location is currently events-only.
+      startDate: initialValues.current.startDate,
+      endDate: initialValues.current.endDate,
+      startTime: initialValues.current.startTime,
+      endTime: initialValues.current.endTime,
+      isFluid: initialValues.current.isFluid,
+      projectId: norm(initialValues.current.projectId),
+      modalType: initialValues.current.modalType
+    }
+
+    const dirty = JSON.stringify(current) !== JSON.stringify(baseline)
+    // Expose dirty state globally for components like KanbanSidebar to check before navigating
+    if (typeof window !== 'undefined') {
+      (window as any).__isJuggleModalDirty = dirty
+    }
+    return dirty
   }
 
   const handleCloseAttempt = () => {
@@ -196,17 +238,19 @@ export default function EventModal({
   // Initialize baseline for "Dirty" check in Creation mode
   useEffect(() => {
     if (!isEditing && !hasInitializedValues) {
+      const typeHint = searchParams.get('modalType') as ModalType || 'event'
       initialValues.current = {
         title: '', description: '', location: '',
         startDate: parseInitDate(initialDate),
         endDate: parseInitDate(initialDate),
         startTime: parseInitTime(initialStartTime, '09:00'),
         endTime: parseInitTime(initialEndTime, '10:00'),
-        isFluid: false, projectId: '', modalType: 'event'
+        isFluid: false, projectId: '', modalType: typeHint
       }
+      setModalType(typeHint)
       setHasInitializedValues(true)
     }
-  }, [isEditing, initialDate, initialStartTime, initialEndTime])
+  }, [isEditing, initialDate, initialStartTime, initialEndTime, searchParams])
 
   useEffect(() => {
     if (!isEditing) {
@@ -302,6 +346,7 @@ export default function EventModal({
           if (editor && data.description) {
             editor.commands.setContent(data.description)
           }
+          requestAnimationFrame(() => modalRef.current?.focus())
         })
     } else if (taskId) {
       fetch(`/api/tasks/${taskId}`)
@@ -334,17 +379,21 @@ export default function EventModal({
           if (editor && data.description) {
             editor.commands.setContent(data.description)
           }
+          requestAnimationFrame(() => modalRef.current?.focus())
         })
     }
   }, [eventId, taskId, editor])
 
   useEffect(() => {
     if (projects.length > 0 && !projectId) {
-      setProjectId(projects[0].id)
+      const firstId = projects[0].id
+      setProjectId(firstId)
       if (!isEditing) {
-        updateDraftUrl(projects[0].id, projects[0].color)
-      } else {
-        initialValues.current = { ...initialValues.current, projectId: projects[0].id }
+        updateDraftUrl(firstId, projects[0].color)
+      }
+      // If we are auto-selecting a project on a "clean" form, don't count it as a "Dirty" change
+      if (initialValues.current && !initialValues.current.projectId) {
+        initialValues.current.projectId = firstId
       }
     }
   }, [projects, projectId, isEditing])
@@ -422,6 +471,8 @@ export default function EventModal({
       if (modalType === 'task') {
         window.dispatchEvent(new CustomEvent('pac-task-updated'))
       }
+      // Reset dirty flag on successful save
+      if (typeof window !== 'undefined') { (window as any).__isJuggleModalDirty = false }
       onClose(); startTransition(() => router.refresh())
     } catch (err) { console.error(err); setIsSubmitting(false) }
   }
@@ -450,6 +501,14 @@ export default function EventModal({
     } finally {
       setIsSubmitting(false)
     }
+  }
+
+  const handleModalKeyDown = (e: React.KeyboardEvent) => {
+    if (!isEditing || isSubmitting) return
+    if (e.key !== 'Delete' && e.key !== 'Backspace') return
+    if (isKeyboardTypingTarget(e.target)) return
+    e.preventDefault()
+    void handleDelete()
   }
 
   const handleSaveProject = async () => {
@@ -533,6 +592,7 @@ export default function EventModal({
         ref={modalRef}
         className={styles.modalContent} 
         onClick={(e) => e.stopPropagation()}
+        onKeyDown={handleModalKeyDown}
         style={{
           top: modalPos ? `${modalPos.top}px` : '50%',
           left: modalPos ? `${modalPos.left}px` : '50%',
@@ -559,7 +619,7 @@ export default function EventModal({
               type="text" 
               className={styles.titleInput} 
               placeholder="Add title" 
-              autoFocus 
+              autoFocus={!eventId && !taskId}
               value={title}
               onChange={e => setTitle(e.target.value)}
             />

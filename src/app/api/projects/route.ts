@@ -1,33 +1,39 @@
 import { NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
+import { jsonError, readJsonBody, validationError } from '@/lib/api/route-errors'
+import { projectCreateSchema } from '@/lib/validation/schemas'
 
 export async function GET() {
   try {
     const projects = await prisma.project.findMany({
-      orderBy: { name: 'asc' }
+      orderBy: { name: 'asc' },
     })
     return NextResponse.json(projects)
   } catch (error) {
     console.error('Failed to fetch projects:', error)
-    return NextResponse.json({ error: 'Failed to fetch projects' }, { status: 500 })
+    return jsonError('Failed to fetch projects', 500)
   }
 }
 
 export async function POST(request: Request) {
+  const body = await readJsonBody(request)
+  if (!body.ok) return body.response
+
+  const parsed = projectCreateSchema.safeParse(body.data)
+  if (!parsed.success) return validationError(parsed.error)
+
+  const d = parsed.data
   try {
-    const body = await request.json()
-    const { name, color } = body
-    
     const project = await prisma.project.create({
       data: {
-        name,
-        color: color || '#312E81'
-      }
+        name: d.name,
+        color: d.color ?? '#312E81',
+      },
     })
-    
+
     return NextResponse.json(project, { status: 201 })
   } catch (error) {
     console.error('Failed to create project:', error)
-    return NextResponse.json({ error: 'Failed to create project' }, { status: 500 })
+    return jsonError('Failed to create project', 500)
   }
 }

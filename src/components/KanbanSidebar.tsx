@@ -67,6 +67,14 @@ export default function KanbanSidebar() {
   }
 
   const openTaskModal = (taskId?: string, status?: string) => {
+    // Check for unsaved changes in the modal before switching tasks
+    if (typeof window !== 'undefined' && (window as any).__isJuggleModalDirty) {
+      const confirmDiscard = window.confirm("You have unsaved changes in the current task. Do you want to discard them and switch?")
+      if (!confirmDiscard) return
+      // Reset the flag if they choose to discard
+      ;(window as any).__isJuggleModalDirty = false
+    }
+
     const params = new URLSearchParams(window.location.search)
     if (taskId) {
       params.set('editTask', taskId)
