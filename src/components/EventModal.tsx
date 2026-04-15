@@ -56,6 +56,7 @@ export default function EventModal({
   // Unsaved changes tracking
   const initialValues = useRef<any>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const isSubmittingRef = useRef(false)
   const [hasInitializedValues, setHasInitializedValues] = useState(false)
   const [mounted, setMounted] = useState(false)
 
@@ -267,7 +268,7 @@ export default function EventModal({
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') handleCloseAttempt()
-      if ((e.key === 'Delete' || e.key === 'Backspace') && isEditing && !isSubmitting && !isKeyboardTypingTarget(e.target)) {
+      if ((e.key === 'Delete' || e.key === 'Backspace') && isEditing && !isSubmittingRef.current && !isKeyboardTypingTarget(e.target)) {
         e.preventDefault()
         void handleDelete()
       }
@@ -275,7 +276,7 @@ export default function EventModal({
     window.addEventListener('keydown', handleKeyDown)
     calculatePosition()
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [searchParams, title, description, location, startDate, endDate, startTime, endTime, isFluid, projectId, modalType, hasInitializedValues, isEditing, isSubmitting])
+  }, [searchParams, title, description, location, startDate, endDate, startTime, endTime, isFluid, projectId, modalType, hasInitializedValues, isEditing])
 
   useLayoutEffect(() => {
     calculatePosition()
@@ -427,7 +428,9 @@ export default function EventModal({
   // --- 7. HANDLERS ---
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (isSubmittingRef.current) return
     setIsSubmitting(true)
+    isSubmittingRef.current = true
 
     try {
       if (modalType === 'task') {
@@ -451,6 +454,7 @@ export default function EventModal({
         if (!isFluid && start >= end) {
           alert("End time must be after start time.")
           setIsSubmitting(false)
+          isSubmittingRef.current = false
           return
         }
         const startIso = start.toISOString(); const endIso = end.toISOString()
@@ -478,13 +482,16 @@ export default function EventModal({
       // Reset dirty flag on successful save
       if (typeof window !== 'undefined') { (window as any).__isJuggleModalDirty = false }
       onClose()
-      await router.refresh()
-    } catch (err) { console.error(err); setIsSubmitting(false) }
+      setTimeout(() => {
+        router.refresh()
+      }, 50)
+    } catch (err) { console.error(err); setIsSubmitting(false); isSubmittingRef.current = false }
   }
 
   const handleDelete = async () => {
-    if (!isEditing) return
+    if (!isEditing || isSubmittingRef.current) return
     setIsSubmitting(true)
+    isSubmittingRef.current = true
     
     try {
       if (taskId) {
@@ -493,25 +500,28 @@ export default function EventModal({
           window.dispatchEvent(new CustomEvent('pac-toast', { detail: `Task deleted` }))
           window.dispatchEvent(new CustomEvent('pac-task-updated'))
           onClose()
-          router.refresh()
+          setTimeout(() => { router.refresh() }, 50)
         }
       } else if (eventId) {
         const title = await deleteEvent(eventId)
         if (title) {
            window.dispatchEvent(new CustomEvent('pac-toast', { detail: `Deleted "${title}"` }))
-           onClose()
-           router.refresh()
         }
+        onClose()
+        setTimeout(() => {
+          router.refresh()
+        }, 50)
       }
     } catch (err) {
       console.error(err)
     } finally {
       setIsSubmitting(false)
+      isSubmittingRef.current = false
     }
   }
 
   const handleModalKeyDown = (e: React.KeyboardEvent) => {
-    if (!isEditing || isSubmitting) return
+    if (!isEditing || isSubmittingRef.current) return
     if (e.key !== 'Delete' && e.key !== 'Backspace') return
     if (isKeyboardTypingTarget(e.target)) return
     e.preventDefault()
