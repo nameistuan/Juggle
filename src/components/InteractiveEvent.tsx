@@ -118,8 +118,8 @@ export default function InteractiveEvent({
   }, [event.id, String(event.fullStartTime), String(event.fullEndTime)])
 
   const activeScaledPixelHeight = heightFraction * 38 * currentScale
-  const is30MinOrLess = heightFraction <= 0.5 
-  const is15Min = heightFraction <= 0.25
+  const isRowLayout = activeScaledPixelHeight < 35 
+  const isMicroLayout = activeScaledPixelHeight < 20
 
   const handleKeyDown = async (e: React.KeyboardEvent) => {
     const tag = (e.target as HTMLElement).tagName
@@ -156,13 +156,8 @@ export default function InteractiveEvent({
     ;(window as any).__activeDragDuration = durationMs
     ;(window as any).__activeDragTitle = event.title
     ;(window as any).__activeDragColor = event.project?.color ?? '#4285f4'
-    
-    // Stale-Lock: Capture the CURRENT time before the move, to keep all segments hidden until the change arrives
-    if (!(window as any).__staleEvents) (window as any).__staleEvents = {}
-    ;(window as any).__staleEvents[event.id] = { 
-      start: new Date(event.fullStartTime).toISOString(), 
-      end: new Date(event.fullEndTime).toISOString() 
-    }
+    ;(window as any).__activeDragOriginalStart = event.fullStartTime
+    ;(window as any).__activeDragOriginalEnd = event.fullEndTime
 
     // Hide ghost
     const blankImg = new Image()
@@ -175,7 +170,8 @@ export default function InteractiveEvent({
 
   const handleDragEnd = () => {
     ;(window as any).__activeDragId = null
-    window.dispatchEvent(new CustomEvent('pac-resize-end'))
+    const isLocked = (window as any).__staleEvents && (window as any).__staleEvents[event.id]
+    window.dispatchEvent(new CustomEvent('pac-resize-end', { detail: { immediate: !isLocked } }))
   }
 
   const handlePointerDown = (e: React.PointerEvent) => {
@@ -221,21 +217,31 @@ export default function InteractiveEvent({
     setTimeout(() => { justResized.current = false }, 100)
     document.removeEventListener('pointermove', handlePointerMove)
     document.removeEventListener('pointerup', handlePointerUp)
-    window.dispatchEvent(new CustomEvent('pac-resize-end'))
-    if (!currentTargetEndTime.current) return
+    
+    if (!currentTargetEndTime.current) {
+      window.dispatchEvent(new CustomEvent('pac-resize-end', { detail: { immediate: true } }))
+      return
+    }
     
     const startIso = new Date(event.fullStartTime).toISOString()
+    const origEndIso = new Date(event.fullEndTime).toISOString()
     const endIso = currentTargetEndTime.current.toISOString()
     
+    if (endIso === origEndIso) {
+      window.dispatchEvent(new CustomEvent('pac-resize-end', { detail: { immediate: true } }))
+      return // No change happened
+    }
+
     // Capture the STALE state (what we have right now) to keep things hidden until the change arrives
     const win = (window as any)
     if (!win.__staleEvents) win.__staleEvents = {}
-    win.__staleEvents[event.id] = { start: startIso, end: new Date(event.fullEndTime).toISOString() }
+    win.__staleEvents[event.id] = { start: startIso, end: origEndIso }
     
-    // Auto-cleanup stale lock after 10s to prevent permanent 'ghosting' if anything fails.
+    // Auto-cleanup stale lock after 5s to prevent permanent 'ghosting' if anything fails.
     setTimeout(() => {
       if (win.__staleEvents) delete win.__staleEvents[event.id]
-    }, 10000)
+      setIsHidden(false)
+    }, 5000)
 
     try {
       await updateEvent(event.id, { endTime: endIso })
@@ -271,8 +277,8 @@ export default function InteractiveEvent({
         borderTop: isStartClipped ? `2px dashed ${event.project?.color ?? '#4285f4'}` : (isLayoutIndented ? '1px solid var(--border-color)' : 'none'),
         borderBottom: isEndClipped ? `2px dashed ${event.project?.color ?? '#4285f4'}` : (isLayoutIndented ? '1px solid var(--border-color)' : 'none'),
         overflow: 'hidden',
-        fontSize: is15Min ? '0.7rem' : '0.85rem',
-        padding: is15Min ? '0px 4px' : '4px 6px'
+        fontSize: isMicroLayout ? '0.7rem' : '0.85rem',
+        padding: isMicroLayout ? '0px 4px' : (isRowLayout ? '0px 6px' : '4px 6px')
       }}
       draggable
       onDragStart={handleDragStart}
@@ -296,7 +302,7 @@ export default function InteractiveEvent({
         router.push(`${href}${anchorParams}`, { scroll: false })
       }}
     >
-      <div style={{ display: 'flex', flexDirection: is30MinOrLess ? 'row' : 'column', justifyContent: is30MinOrLess ? 'space-between' : 'flex-start', alignItems: 'flex-start', gap: is30MinOrLess ? '6px' : '0px', height: '100%', width: '100%', color: 'inherit', padding: 0.5 }}>
+      <div style={{ display: 'flex', flexDirection: isRowLayout ? 'row' : 'column', justifyContent: isRowLayout ? 'space-between' : 'flex-start', alignItems: isRowLayout ? 'center' : 'flex-start', gap: isRowLayout ? '6px' : '0px', height: '100%', width: '100%', color: 'inherit' }}>
         <div style={{ fontWeight: 600, flexShrink: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
           {event.title}
         </div>

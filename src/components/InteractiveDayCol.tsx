@@ -62,9 +62,9 @@ export default function InteractiveDayCol({ dateStr, className, children, style 
   const [resizeTitle, setResizeTitle] = useState<string>('')
   const [resizeTime, setResizeTime] = useState<string>('')
 
-  const isMoreThanHourResize = resizeHeightFraction !== null && resizeHeightFraction >= 1
-  const is30MinOrLessResize = resizeHeightFraction !== null && resizeHeightFraction <= 0.5
-  const is15MinResize = resizeHeightFraction !== null && resizeHeightFraction <= 0.25
+  const activeResizePixelHeight = (resizeHeightFraction ?? 0) * getCurrentHourHeight()
+  const isRowResize = activeResizePixelHeight > 0 && activeResizePixelHeight < 35
+  const isMicroResize = activeResizePixelHeight > 0 && activeResizePixelHeight < 20
 
   // UI Ghost Handshake Logic handled via __staleEvents global and CustomEvents.
   useEffect(() => {
@@ -126,12 +126,17 @@ export default function InteractiveDayCol({ dateStr, className, children, style 
         setResizeHeightFraction(null)
       }
     }
-    const handleResizeEnd = () => {
-      // Handled primarily by the [children] effect, but this fail-safe clears stale ghosts if the network fails.
-      setTimeout(() => {
+    const handleResizeEnd = (e: any) => {
+      if (e?.detail?.immediate) {
         setResizeYFraction(null)
         setResizeHeightFraction(null)
-      }, 2000)
+      } else {
+        // Handled primarily by the [children] effect, but this fail-safe clears stale ghosts if the network fails.
+        setTimeout(() => {
+          setResizeYFraction(null)
+          setResizeHeightFraction(null)
+        }, 2000)
+      }
     }
 
     window.addEventListener('pac-resize-preview', handleResizePreview)
@@ -216,10 +221,24 @@ export default function InteractiveDayCol({ dateStr, className, children, style 
 
     const startIso = snappedNewStartDate.toISOString()
     const endIso = snappedNewEndDate.toISOString()
-    window.dispatchEvent(new CustomEvent('pac-resize-end')) // Terminate ghost block
 
     try {
       if (eventId) {
+        const origStart = new Date((window as any).__activeDragOriginalStart).toISOString()
+        const origEnd = new Date((window as any).__activeDragOriginalEnd).toISOString()
+        
+        // Skip API request and do not keep hidden if no times actually changed.
+        if (startIso === origStart && endIso === origEnd) {
+           window.dispatchEvent(new CustomEvent('pac-resize-end', { detail: { immediate: true } }))
+           return
+        }
+        
+        // Establish Stale Lock: prevent the component from un-hiding while network computes
+        if (!(window as any).__staleEvents) (window as any).__staleEvents = {}
+        ;(window as any).__staleEvents[eventId] = { start: origStart, end: origEnd }
+        
+        window.dispatchEvent(new CustomEvent('pac-resize-end')) // Terminate ghost block visually
+
         // Move existing Event
         const label = await updateEvent(eventId, {
           startTime: startIso,
@@ -228,7 +247,15 @@ export default function InteractiveDayCol({ dateStr, className, children, style 
         if (label) {
           window.dispatchEvent(new CustomEvent('pac-toast', { detail: `Moved "${label}" — Press ⌘Z to undo` }))
         }
+        
+        // Fallback clearer (ensure event resurrects if network hangs/fails silently)
+        setTimeout(() => {
+           if ((window as any).__staleEvents) delete (window as any).__staleEvents[eventId]
+           window.dispatchEvent(new CustomEvent('pac-resize-end'))
+        }, 5000)
+
       } else if (taskId) {
+        window.dispatchEvent(new CustomEvent('pac-resize-end')) // Terminate ghost block
         // Create new Event from dragged Task
         const newEventId = await createEvent({
           title: taskTitle || 'Task Block',
@@ -248,6 +275,9 @@ export default function InteractiveDayCol({ dateStr, className, children, style 
       await router.refresh()
     } catch (err) {
       console.error("Failed to execute DND movement.", err)
+      if (eventId && (window as any).__staleEvents) {
+         delete (window as any).__staleEvents[eventId]
+      }
     }
   }
 
@@ -387,6 +417,10 @@ export default function InteractiveDayCol({ dateStr, className, children, style 
     draftHeightFrac = (eDate.getTime() - sDate.getTime()) / 3600000
   }
 
+  const activeDraftPixelHeight = (draftHeightFrac ?? 0) * getCurrentHourHeight()
+  const isRowDraft = draftHeightFrac !== null && activeDraftPixelHeight < 35
+  const isMicroDraft = draftHeightFrac !== null && activeDraftPixelHeight < 20
+
   let ghostTop = 0
   let ghostHeight = 0
   if (isCreating && createStartFraction !== null && createCurrentFraction !== null) {
@@ -394,6 +428,9 @@ export default function InteractiveDayCol({ dateStr, className, children, style 
     ghostHeight = Math.abs(createCurrentFraction - createStartFraction)
     if (ghostHeight === 0) ghostHeight = 0.5 // Default 30 min visual if start=end during drag
   }
+  const activeCreatePixelHeight = ghostHeight * getCurrentHourHeight()
+  const isRowCreate = ghostHeight > 0 && activeCreatePixelHeight < 35
+  const isMicroCreate = ghostHeight > 0 && activeCreatePixelHeight < 20
 
   return (
     <div 
@@ -454,18 +491,18 @@ export default function InteractiveDayCol({ dateStr, className, children, style 
             pointerEvents: 'none',
             display: 'flex',
             alignItems: 'flex-start',
-            padding: ghostHeight <= 0.25 ? '0px 4px' : '4px 6px',
+            padding: isMicroCreate ? '0px 4px' : (isRowCreate ? '0px 6px' : '4px 6px'),
             color: '#fff',
-            fontSize: ghostHeight <= 0.25 ? '0.7rem' : '0.85rem',
+            fontSize: isMicroCreate ? '0.7rem' : '0.85rem',
             boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
             overflow: 'hidden'
           }}
         >
-          <div style={{ display: 'flex', flexDirection: ghostHeight <= 0.5 ? 'row' : 'column', justifyContent: ghostHeight <= 0.5 ? 'space-between' : 'flex-start', alignItems: 'flex-start', gap: ghostHeight <= 0.5 ? '6px' : '0px', height: '100%', width: '100%', padding: 0.5 }}>
+          <div style={{ display: 'flex', flexDirection: isRowCreate ? 'row' : 'column', justifyContent: isRowCreate ? 'space-between' : 'flex-start', alignItems: isRowCreate ? 'center' : 'flex-start', gap: isRowCreate ? '6px' : '0px', height: '100%', width: '100%' }}>
             <div style={{ fontWeight: 600, flexShrink: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
               New event
             </div>
-            {ghostHeight > 0.25 && (
+            {!isMicroCreate && (
               <div style={{ opacity: 0.8, fontSize: '0.75rem', flexShrink: 0, whiteSpace: 'nowrap' }}>
                 {(() => {
                    const startF = ghostTop
@@ -502,17 +539,17 @@ export default function InteractiveDayCol({ dateStr, className, children, style 
             zIndex: 45, 
             pointerEvents: 'none',
             boxShadow: '0 8px 16px rgba(0,0,0,0.15)',
-            padding: resizeHeightFraction <= 0.25 ? '0px 4px' : '4px 6px',
+            padding: isMicroResize ? '0px 4px' : (isRowResize ? '0px 6px' : '4px 6px'),
             color: resizeColor || '#4285f4',
-            fontSize: resizeHeightFraction <= 0.25 ? '0.7rem' : '0.85rem',
+            fontSize: isMicroResize ? '0.7rem' : '0.85rem',
             overflow: 'hidden'
           }}
         >
-          <div style={{ display: 'flex', flexDirection: is30MinOrLessResize ? 'row' : 'column', justifyContent: is30MinOrLessResize ? 'space-between' : 'flex-start', alignItems: 'flex-start', gap: is30MinOrLessResize ? '6px' : '0px', height: '100%', width: '100%', padding: 0.5 }}>
+          <div style={{ display: 'flex', flexDirection: isRowResize ? 'row' : 'column', justifyContent: isRowResize ? 'space-between' : 'flex-start', alignItems: isRowResize ? 'center' : 'flex-start', gap: isRowResize ? '6px' : '0px', height: '100%', width: '100%' }}>
             <div style={{ fontWeight: 600, flexShrink: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
               {resizeTitle || 'Moving Event'}
             </div>
-            {!is15MinResize && (
+            {!isMicroResize && (
               <div style={{ opacity: 0.8, fontSize: '0.75rem', flexShrink: 0, whiteSpace: 'nowrap' }}>
                 {resizeTime || 'Pending...'}
               </div>
@@ -540,17 +577,17 @@ export default function InteractiveDayCol({ dateStr, className, children, style 
             pointerEvents: 'none',
             display: 'flex',
             alignItems: 'flex-start',
-            padding: draftHeightFrac <= 0.25 ? '0px 4px' : '4px 6px',
+            padding: isMicroDraft ? '0px 4px' : (isRowDraft ? '0px 6px' : '4px 6px'),
             color: draftColor === 'var(--primary-color)' ? '#fff' : draftColor,
-            fontSize: draftHeightFrac <= 0.25 ? '0.7rem' : '0.85rem',
+            fontSize: isMicroDraft ? '0.7rem' : '0.85rem',
             overflow: 'hidden'
           }}
         >
-           <div style={{ display: 'flex', flexDirection: draftHeightFrac <= 0.5 ? 'row' : 'column', justifyContent: draftHeightFrac <= 0.5 ? 'space-between' : 'flex-start', alignItems: 'flex-start', gap: draftHeightFrac <= 0.5 ? '6px' : '0px', height: '100%', width: '100%', padding: 0.5 }}>
+           <div style={{ display: 'flex', flexDirection: isRowDraft ? 'row' : 'column', justifyContent: isRowDraft ? 'space-between' : 'flex-start', alignItems: isRowDraft ? 'center' : 'flex-start', gap: isRowDraft ? '6px' : '0px', height: '100%', width: '100%' }}>
             <div style={{ fontWeight: 600, flexShrink: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
               New event
             </div>
-            {draftHeightFrac > 0.25 && (
+            {!isMicroDraft && (
               <div style={{ opacity: 0.9, fontSize: '0.75rem', flexShrink: 0, whiteSpace: 'nowrap' }}>
                 {(() => {
                    const sH = Math.floor(draftTopFrac!)
