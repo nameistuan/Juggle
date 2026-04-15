@@ -1,6 +1,6 @@
 'use client'
 
-import React, { ReactNode, useState, useEffect, useRef, startTransition } from 'react'
+import React, { ReactNode, useState, useEffect, useRef } from 'react'
 import { useRouter, usePathname, useSearchParams } from 'next/navigation'
 import { format, isToday, parseISO } from 'date-fns'
 import { updateEvent, createEvent } from '@/lib/undoManager'
@@ -244,10 +244,8 @@ export default function InteractiveDayCol({ dateStr, className, children, style 
           window.dispatchEvent(new CustomEvent('pac-toast', { detail: `Blocked time for "${taskTitle}" — Press ⌘Z to undo` }))
         }
       }
-      
-      startTransition(() => {
-        router.refresh()
-      })
+
+      await router.refresh()
     } catch (err) {
       console.error("Failed to execute DND movement.", err)
     }

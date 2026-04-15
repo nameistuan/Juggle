@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef, startTransition, useLayoutEffect } from 'react'
+import { useState, useEffect, useRef, useLayoutEffect } from 'react'
 import { useRouter, useSearchParams, usePathname } from 'next/navigation'
 import styles from './EventModal.module.css'
 import { deleteEvent, updateEvent, pushCreate } from '@/lib/undoManager'
@@ -267,11 +267,15 @@ export default function EventModal({
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') handleCloseAttempt()
+      if ((e.key === 'Delete' || e.key === 'Backspace') && isEditing && !isSubmitting && !isKeyboardTypingTarget(e.target)) {
+        e.preventDefault()
+        void handleDelete()
+      }
     }
     window.addEventListener('keydown', handleKeyDown)
     calculatePosition()
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [searchParams, title, description, location, startDate, endDate, startTime, endTime, isFluid, projectId, modalType, hasInitializedValues])
+  }, [searchParams, title, description, location, startDate, endDate, startTime, endTime, isFluid, projectId, modalType, hasInitializedValues, isEditing, isSubmitting])
 
   useLayoutEffect(() => {
     calculatePosition()
@@ -473,7 +477,8 @@ export default function EventModal({
       }
       // Reset dirty flag on successful save
       if (typeof window !== 'undefined') { (window as any).__isJuggleModalDirty = false }
-      onClose(); startTransition(() => router.refresh())
+      onClose()
+      await router.refresh()
     } catch (err) { console.error(err); setIsSubmitting(false) }
   }
 
@@ -487,13 +492,15 @@ export default function EventModal({
         if (res.ok) {
           window.dispatchEvent(new CustomEvent('pac-toast', { detail: `Task deleted` }))
           window.dispatchEvent(new CustomEvent('pac-task-updated'))
-          onClose(); startTransition(() => router.refresh())
+          onClose()
+          router.refresh()
         }
       } else if (eventId) {
         const title = await deleteEvent(eventId)
         if (title) {
            window.dispatchEvent(new CustomEvent('pac-toast', { detail: `Deleted "${title}"` }))
-           onClose(); startTransition(() => router.refresh())
+           onClose()
+           router.refresh()
         }
       }
     } catch (err) {

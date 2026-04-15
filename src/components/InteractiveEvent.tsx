@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useRef, useState, useEffect, startTransition } from 'react'
+import React, { useRef, useState, useEffect } from 'react'
 import { format } from 'date-fns'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { deleteEvent, updateEvent } from '@/lib/undoManager'
@@ -100,13 +100,19 @@ export default function InteractiveEvent({
       setIsHidden(false)
     }
 
+    const handleDeleted = (e: any) => {
+      if (e.detail === event.id) setIsHidden(true)
+    }
+
     window.addEventListener('pac-resize-preview', handlePreview)
     window.addEventListener('pac-resize-end', handleEnd)
-    
+    window.addEventListener('pac-event-deleted', handleDeleted)
+
     return () => {
       window.removeEventListener('pac-scale-change', onZoom)
       window.removeEventListener('pac-resize-preview', handlePreview)
       window.removeEventListener('pac-resize-end', handleEnd)
+      window.removeEventListener('pac-event-deleted', handleDeleted)
     }
     // Deep dependency array ensures we un-hide correctly after the server payload arrives
   }, [event.id, String(event.fullStartTime), String(event.fullEndTime)])
@@ -123,7 +129,7 @@ export default function InteractiveEvent({
       const success = await deleteEvent(event.id)
       if (success) {
         window.dispatchEvent(new CustomEvent('pac-toast', { detail: `Deleted "${event.title}"` }))
-        startTransition(() => router.refresh())
+        await router.refresh()
       }
     }
   }
@@ -233,7 +239,7 @@ export default function InteractiveEvent({
 
     try {
       await updateEvent(event.id, { endTime: endIso })
-      startTransition(() => router.refresh())
+      await router.refresh()
     } catch (err) { console.error(err) }
   }
 

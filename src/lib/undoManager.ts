@@ -85,6 +85,8 @@ function clearRedo() { redoStack.length = 0 }
 
 function notifyDelete(eventId: string) {
   if (typeof window !== 'undefined') {
+    const win = window as Window & { __staleEvents?: Record<string, unknown> }
+    if (win.__staleEvents) delete win.__staleEvents[eventId]
     window.dispatchEvent(new CustomEvent('pac-event-deleted', { detail: eventId }))
   }
 }

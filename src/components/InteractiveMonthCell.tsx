@@ -1,6 +1,6 @@
 'use client'
 
-import { ReactNode, startTransition } from 'react'
+import { ReactNode } from 'react'
 import { useRouter, usePathname, useSearchParams } from 'next/navigation'
 import { updateEvent } from '@/lib/undoManager'
 
@@ -61,9 +61,7 @@ export default function InteractiveMonthCell({
       if (label) {
         window.dispatchEvent(new CustomEvent('pac-toast', { detail: `Moved "${label}" — Press ⌘Z to undo` }))
       }
-      startTransition(() => {
-        router.refresh()
-      })
+      await router.refresh()
     } catch (err) {
       console.error("Failed to execute Month DND swap", err)
     }

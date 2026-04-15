@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useEffect, startTransition, useMemo } from 'react'
+import { useState, useRef, useEffect, useMemo } from 'react'
 import { useSearchParams, useRouter, usePathname } from 'next/navigation'
 import { format, addMonths, subMonths, addWeeks, subWeeks, addDays, subDays } from 'date-fns'
 import { getTodayISO, parseISOString } from '@/lib/dateUtils'
@@ -123,9 +123,9 @@ export default function AppShell({
       else if (e.key === '2') router.push(`/week?date=${format(internalDate, 'yyyy-MM-dd')}`)
       else if (e.key === '3') router.push(`/day?date=${format(internalDate, 'yyyy-MM-dd')}`)
       else if ((e.metaKey || e.ctrlKey) && e.key === 'z' && !e.shiftKey) {
-        e.preventDefault(); undo().then(l => { if(l) { showToast(l); startTransition(()=>router.refresh()) } })
+        e.preventDefault(); undo().then(async (l) => { if (l) { showToast(l); await router.refresh() } })
       } else if ((e.metaKey || e.ctrlKey) && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) {
-        e.preventDefault(); redo().then(l => { if(l) { showToast(l); startTransition(()=>router.refresh()) } })
+        e.preventDefault(); redo().then(async (l) => { if (l) { showToast(l); await router.refresh() } })
       }
     }
     window.addEventListener('keydown', handleKeyDown)
