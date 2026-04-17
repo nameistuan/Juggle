@@ -1,8 +1,9 @@
-// middleware.ts
-export { middleware } from "@/lib/auth-edge"
+import NextAuth from "next-auth"
+import { authConfig } from "@/lib/auth.config"
+
+export default NextAuth(authConfig).auth
 
 export const config = {
-  matcher: [
-    "/((?!_next/static|_next/image|favicon.ico).*)",
-  ],
+  // Matching everything except static files and icons
+  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
 }
