@@ -93,6 +93,24 @@ export async function PUT(
         where: { id },
         include: eventInclude,
       })
+
+      if (event?.taskId && (updateFields.title !== undefined || updateFields.description !== undefined)) {
+        await prisma.task.update({
+          where: { id: event.taskId },
+          data: {
+            ...(updateFields.title !== undefined && { title: updateFields.title as string }),
+            ...(updateFields.description !== undefined && { description: updateFields.description as string | null })
+          }
+        })
+        await prisma.event.updateMany({
+          where: { taskId: event.taskId, id: { not: id } },
+          data: {
+            ...(updateFields.title !== undefined && { title: updateFields.title as string }),
+            ...(updateFields.description !== undefined && { description: updateFields.description as string | null })
+          }
+        })
+      }
+
       return NextResponse.json(event)
     }
 
@@ -101,6 +119,23 @@ export async function PUT(
       data: updateFields,
       include: eventInclude,
     })
+
+    if (event.taskId && (updateFields.title !== undefined || updateFields.description !== undefined)) {
+      await prisma.task.update({
+        where: { id: event.taskId },
+        data: {
+          ...(updateFields.title !== undefined && { title: updateFields.title as string }),
+          ...(updateFields.description !== undefined && { description: updateFields.description as string | null })
+        }
+      })
+      await prisma.event.updateMany({
+        where: { taskId: event.taskId, id: { not: id } },
+        data: {
+          ...(updateFields.title !== undefined && { title: updateFields.title as string }),
+          ...(updateFields.description !== undefined && { description: updateFields.description as string | null })
+        }
+      })
+    }
 
     return NextResponse.json(event)
   } catch (error) {

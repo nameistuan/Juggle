@@ -34,11 +34,15 @@ export default async function MonthView({
     currentDate = parseISO(`${resolvedParams.month}-01T12:00:00Z`)
   }
   
-  const getEventUrl = (eventId: string) => {
+  const getEventUrl = (event: any) => {
     const params = new URLSearchParams()
     if (resolvedParams.date) params.set('date', resolvedParams.date)
     if (resolvedParams.month) params.set('month', resolvedParams.month)
-    params.set('editEvent', eventId)
+    if (event.taskId) {
+      params.set('editTask', event.taskId)
+    } else {
+      params.set('editEvent', event.id)
+    }
     return `/?${params.toString()}`
   }
   const monthStart = startOfMonth(currentDate)
@@ -112,7 +116,7 @@ export default async function MonthView({
                 <InteractiveMonthEvent
                   key={event.id}
                   event={event}
-                  href={getEventUrl(event.id)}
+                  href={getEventUrl(event)}
                   className={styles.eventBadge}
                   dotClassName={styles.eventDot}
                   timeClassName={styles.eventTime}

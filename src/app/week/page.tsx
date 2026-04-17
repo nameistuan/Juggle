@@ -29,11 +29,15 @@ export default async function WeekView({
   const { date, month } = await searchParams
   const currentDate = parseISOString(date)
   
-  const getEventUrl = (eventId: string) => {
+  const getEventUrl = (event: any) => {
     const params = new URLSearchParams()
     if (date) params.set('date', date)
     if (month) params.set('month', month)
-    params.set('editEvent', eventId)
+    if (event.taskId) {
+      params.set('editTask', event.taskId)
+    } else {
+      params.set('editEvent', event.id)
+    }
     return `/week?${params.toString()}`
   }
   
@@ -123,7 +127,7 @@ export default async function WeekView({
                     <InteractiveEvent
                       key={`${le.id}-${dateStr}`}
                       event={le}
-                      href={getEventUrl(le.id)}
+                      href={getEventUrl(le)}
                       dateStr={dateStr}
                       topFraction={topFraction}
                       heightFraction={heightFraction}

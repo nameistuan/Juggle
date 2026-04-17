@@ -90,6 +90,7 @@ export default function EventModal({
   const isEditing = !!eventId || !!taskId
   
   const [taskStatus, setTaskStatus] = useState<'todo' | 'inprogress' | 'done'>('todo')
+  const [taskPriority, setTaskPriority] = useState<'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT'>('MEDIUM')
   const [isCreatingProject, setIsCreatingProject] = useState(false)
   const [editingProjectId, setEditingProjectId] = useState<string | null>(null)
   const [newProjectName, setNewProjectName] = useState('')
@@ -143,20 +144,24 @@ export default function EventModal({
       location: norm(location),
       startDate, endDate, startTime, endTime, isFluid, 
       projectId: norm(projectId), 
-      modalType
+      modalType,
+      taskStatus: modalType === 'task' ? taskStatus : 'todo',
+      taskPriority: modalType === 'task' ? taskPriority : 'MEDIUM'
     }
     
     const baseline = {
       title: norm(initialValues.current.title),
       description: normDesc(initialValues.current.description),
-      location: norm(location), // Note: using current location vs initial if we wanted strict, but location is currently events-only.
+      location: norm(initialValues.current.location), // fixed strict check
       startDate: initialValues.current.startDate,
       endDate: initialValues.current.endDate,
       startTime: initialValues.current.startTime,
       endTime: initialValues.current.endTime,
       isFluid: initialValues.current.isFluid,
       projectId: norm(initialValues.current.projectId),
-      modalType: initialValues.current.modalType
+      modalType: initialValues.current.modalType,
+      taskStatus: initialValues.current.taskStatus || 'todo',
+      taskPriority: initialValues.current.taskPriority || 'MEDIUM'
     }
 
     const dirty = JSON.stringify(current) !== JSON.stringify(baseline)
@@ -246,7 +251,8 @@ export default function EventModal({
         endDate: parseInitDate(initialDate),
         startTime: parseInitTime(initialStartTime, '09:00'),
         endTime: parseInitTime(initialEndTime, '10:00'),
-        isFluid: false, projectId: '', modalType: typeHint
+        isFluid: false, projectId: '', modalType: typeHint,
+        taskPriority: 'MEDIUM'
       }
       setModalType(typeHint)
       setHasInitializedValues(true)
@@ -361,22 +367,28 @@ export default function EventModal({
             title: data.title,
             description: data.description || '',
             location: '',
-            startDate: data.dueDate ? format(new Date(data.dueDate), 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd'),
-            endDate: data.dueDate ? format(new Date(data.dueDate), 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd'),
+            startDate: data.plannedDate || '',
+            endDate: data.dueDate ? format(new Date(data.dueDate), 'yyyy-MM-dd') : '',
             startTime: '09:00',
             endTime: '10:00',
             isFluid: true,
             projectId: data.projectId || '',
-            modalType: 'task'
+            modalType: 'task',
+            taskStatus: data.status ? data.status.toLowerCase().replace('_', '') : 'todo',
+            taskPriority: data.priority || 'MEDIUM'
           }
           
           setTitle(baseline.title)
           setDescription(baseline.description)
           setStartDate(baseline.startDate)
           setEndDate(baseline.endDate)
+          setStartTime(baseline.startTime)
+          setEndTime(baseline.endTime)
+          setIsFluid(baseline.isFluid)
           setProjectId(baseline.projectId)
           setModalType('task')
-          setTaskStatus(data.status.toLowerCase() as any)
+          setTaskStatus(baseline.taskStatus as any)
+          setTaskPriority(baseline.taskPriority as any)
           
           initialValues.current = baseline
           setHasInitializedValues(true)
@@ -442,8 +454,10 @@ export default function EventModal({
           body: JSON.stringify({
             title,
             description,
-            status: taskStatus.toUpperCase(),
-            dueDate: isFluid ? new Date(`${startDate}T23:59:59`) : new Date(`${startDate}T${startTime}:00`),
+            status: taskStatus.toUpperCase().replace('INPROGRESS', 'IN_PROGRESS'),
+            priority: taskPriority,
+            dueDate: endDate ? new Date(`${endDate}T23:59:59`).toISOString() : null,
+            plannedDate: startDate || null,
             projectId: projectId || undefined
           })
         })
@@ -648,43 +662,63 @@ export default function EventModal({
             </div>
 
             <div className={styles.whenSectionMinimal}>
-              <div className={styles.whenCohesiveRow}>
-                <div className={styles.interactiveSegment}>
-                  <div className={styles.cohesiveDate}>{format(new Date(`${startDate}T12:00:00`), 'EEEE, MMMM d')}</div>
-                  <input type="date" className={styles.invisibleOverlay} value={startDate} onChange={e => { setStartDate(e.target.value); setEndDate(e.target.value) }} />
+              {modalType === 'task' ? (
+                <div style={{ display: 'flex', gap: '16px', alignItems: 'center', marginTop: '12px', paddingBottom: '12px', borderBottom: '1px solid transparent' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <div style={{ fontSize: '0.75rem', fontWeight: 600, color: '#5f6368', textTransform: 'uppercase' }}>Start Date</div>
+                    <div className={styles.interactiveSegment}>
+                      <div className={styles.cohesiveDate} style={{ border: '1px solid #dadce0', borderRadius: '6px', padding: '6px 12px', minWidth: '110px', textAlign: 'center' }}>{startDate ? format(new Date(`${startDate}T12:00:00`), 'MMM d, yyyy') : 'No Date'}</div>
+                      <input type="date" className={styles.invisibleOverlay} value={startDate || ''} onChange={e => setStartDate(e.target.value)} />
+                    </div>
+                  </div>
+                  <span style={{ color: '#dadce0', fontSize: '1.2rem', margin: '0 -4px' }}>➞</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <div style={{ fontSize: '0.75rem', fontWeight: 600, color: '#5f6368', textTransform: 'uppercase' }}>Due Date</div>
+                    <div className={styles.interactiveSegment}>
+                      <div className={styles.cohesiveDate} style={{ border: '1px solid #dadce0', borderRadius: '6px', padding: '6px 12px', minWidth: '110px', textAlign: 'center' }}>{endDate ? format(new Date(`${endDate}T12:00:00`), 'MMM d, yyyy') : 'No Date'}</div>
+                      <input type="date" className={styles.invisibleOverlay} value={endDate || ''} onChange={e => setEndDate(e.target.value)} />
+                    </div>
+                  </div>
                 </div>
-                {!isFluid && (
-                  <>
-                    <div className={styles.interactiveSegment}>
-                      <div className={styles.cohesiveTime}>{timeOptions.find(o => o.value === startTime)?.label || startTime}</div>
-                      <div className={styles.invisibleOverlay} onClick={(e) => { e.stopPropagation(); setActiveDropdown(activeDropdown === 'start' ? null : 'start') }} />
-                      {activeDropdown === 'start' && (
-                        <div className={styles.timeDropdown} onClick={e => e.stopPropagation()}>
-                          {timeOptions.map(opt => (
-                            <div key={opt.value} className={`${styles.timeOption} ${startTime === opt.value ? styles.timeOptionActive : ''}`} onClick={() => { setStartTime(opt.value); setActiveDropdown(null) }}>{opt.label}</div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                    <span style={{ color: '#5f6368' }}>–</span>
-                    <div className={styles.interactiveSegment}>
-                      <div className={styles.cohesiveTime}>{timeOptions.find(o => o.value === endTime)?.label || endTime}</div>
-                      <div className={styles.invisibleOverlay} onClick={(e) => { e.stopPropagation(); setActiveDropdown(activeDropdown === 'end' ? null : 'end') }} />
-                      {activeDropdown === 'end' && (
-                        <div className={styles.timeDropdown} onClick={e => e.stopPropagation()}>
-                          {timeOptions.map(opt => (
-                            <div key={opt.value} className={`${styles.timeOption} ${endTime === opt.value ? styles.timeOptionActive : ''}`} onClick={() => { setEndTime(opt.value); setActiveDropdown(null) }}>{opt.label}</div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </>
-                )}
-                <label className={styles.allDayToggleMinimal}>
-                  <input type="checkbox" checked={isFluid} onChange={e => setIsFluid(e.target.checked)} />
-                  All day
-                </label>
-              </div>
+              ) : (
+                <div className={styles.whenCohesiveRow}>
+                  <div className={styles.interactiveSegment}>
+                    <div className={styles.cohesiveDate}>{format(new Date(`${startDate}T12:00:00`), 'EEEE, MMMM d')}</div>
+                    <input type="date" className={styles.invisibleOverlay} value={startDate} onChange={e => { setStartDate(e.target.value); setEndDate(e.target.value) }} />
+                  </div>
+                  {!isFluid && (
+                    <>
+                      <div className={styles.interactiveSegment}>
+                        <div className={styles.cohesiveTime}>{timeOptions.find(o => o.value === startTime)?.label || startTime}</div>
+                        <div className={styles.invisibleOverlay} onClick={(e) => { e.stopPropagation(); setActiveDropdown(activeDropdown === 'start' ? null : 'start') }} />
+                        {activeDropdown === 'start' && (
+                          <div className={styles.timeDropdown} onClick={e => e.stopPropagation()}>
+                            {timeOptions.map(opt => (
+                              <div key={opt.value} className={`${styles.timeOption} ${startTime === opt.value ? styles.timeOptionActive : ''}`} onClick={() => { setStartTime(opt.value); setActiveDropdown(null) }}>{opt.label}</div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                      <span style={{ color: '#5f6368' }}>–</span>
+                      <div className={styles.interactiveSegment}>
+                        <div className={styles.cohesiveTime}>{timeOptions.find(o => o.value === endTime)?.label || endTime}</div>
+                        <div className={styles.invisibleOverlay} onClick={(e) => { e.stopPropagation(); setActiveDropdown(activeDropdown === 'end' ? null : 'end') }} />
+                        {activeDropdown === 'end' && (
+                          <div className={styles.timeDropdown} onClick={e => e.stopPropagation()}>
+                            {timeOptions.map(opt => (
+                              <div key={opt.value} className={`${styles.timeOption} ${endTime === opt.value ? styles.timeOptionActive : ''}`} onClick={() => { setEndTime(opt.value); setActiveDropdown(null) }}>{opt.label}</div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </>
+                  )}
+                  <label className={styles.allDayToggleMinimal}>
+                    <input type="checkbox" checked={isFluid} onChange={e => setIsFluid(e.target.checked)} />
+                    All day
+                  </label>
+                </div>
+              )}
             </div>
 
             <div className={styles.calendarSectionMinimal}>
@@ -754,14 +788,25 @@ export default function EventModal({
                  </div>
                )}
                {modalType === 'task' && (
-                 <div className={styles.fieldBox}>
-                    <div className={styles.fieldIcon}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
-                    <select className={styles.fieldSelect} value={taskStatus} onChange={e => setTaskStatus(e.target.value as any)}>
-                      <option value="todo">To Do</option>
-                      <option value="inprogress">In Progress</option>
-                      <option value="done">Done</option>
-                    </select>
-                 </div>
+                 <>
+                   <div className={styles.fieldBox}>
+                      <div className={styles.fieldIcon}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+                      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                        <button type="button" className={`${styles.pillBtnMinimal} ${taskStatus === 'todo' ? styles.pillBtnMinimalActive : ''}`} onClick={() => setTaskStatus('todo')} style={taskStatus === 'todo' ? { backgroundColor: '#ef444415', borderColor: '#ef444450', color: '#ef4444' } : {}}>To Do</button>
+                        <button type="button" className={`${styles.pillBtnMinimal} ${taskStatus === 'inprogress' ? styles.pillBtnMinimalActive : ''}`} onClick={() => setTaskStatus('inprogress')} style={taskStatus === 'inprogress' ? { backgroundColor: '#f59e0b15', borderColor: '#f59e0b50', color: '#f59e0b' } : {}}>In Progress</button>
+                        <button type="button" className={`${styles.pillBtnMinimal} ${taskStatus === 'done' ? styles.pillBtnMinimalActive : ''}`} onClick={() => setTaskStatus('done')} style={taskStatus === 'done' ? { backgroundColor: '#22c55e15', borderColor: '#22c55e50', color: '#22c55e' } : {}}>Done</button>
+                      </div>
+                   </div>
+                   <div className={styles.fieldBox}>
+                      <div className={styles.fieldIcon}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1zM4 22v-7"/></svg></div>
+                      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                        <button type="button" className={`${styles.pillBtnMinimal} ${taskPriority === 'LOW' ? styles.pillBtnMinimalActive : ''}`} onClick={() => setTaskPriority('LOW')} style={taskPriority === 'LOW' ? { backgroundColor: '#6b728015', borderColor: '#6b728050', color: '#6b7280' } : {}}>Low</button>
+                        <button type="button" className={`${styles.pillBtnMinimal} ${taskPriority === 'MEDIUM' ? styles.pillBtnMinimalActive : ''}`} onClick={() => setTaskPriority('MEDIUM')} style={taskPriority === 'MEDIUM' ? { backgroundColor: '#eab30815', borderColor: '#eab30850', color: '#eab308' } : {}}>Medium</button>
+                        <button type="button" className={`${styles.pillBtnMinimal} ${taskPriority === 'HIGH' ? styles.pillBtnMinimalActive : ''}`} onClick={() => setTaskPriority('HIGH')} style={taskPriority === 'HIGH' ? { backgroundColor: '#f9731615', borderColor: '#f9731650', color: '#f97316' } : {}}>High</button>
+                        <button type="button" className={`${styles.pillBtnMinimal} ${taskPriority === 'URGENT' ? styles.pillBtnMinimalActive : ''}`} onClick={() => setTaskPriority('URGENT')} style={taskPriority === 'URGENT' ? { backgroundColor: '#ef444415', borderColor: '#ef444450', color: '#ef4444' } : {}}>Urgent</button>
+                      </div>
+                   </div>
+                 </>
                )}
                {modalType !== 'reminder' && (
                  <div className={styles.descriptionBox}>

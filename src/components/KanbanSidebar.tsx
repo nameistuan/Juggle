@@ -9,6 +9,7 @@ type Task = {
   title: string
   status: string
   dueDate?: string | null
+  priority?: string | null
   project?: { color: string; name: string } | null
 }
 
@@ -66,7 +67,7 @@ export default function KanbanSidebar() {
     }
   }
 
-  const openTaskModal = (taskId?: string, status?: string) => {
+  const openTaskModal = (e: React.MouseEvent, taskId?: string, status?: string) => {
     // Check for unsaved changes in the modal before switching tasks
     if (typeof window !== 'undefined' && (window as any).__isJuggleModalDirty) {
       const confirmDiscard = window.confirm("You have unsaved changes in the current task. Do you want to discard them and switch?")
@@ -83,6 +84,15 @@ export default function KanbanSidebar() {
       params.set('modalType', 'task') // Hint for the modal
       if (status) params.set('status', status)
     }
+
+    try {
+      const rect = e.currentTarget.getBoundingClientRect()
+      params.set('ax', Math.round(rect.left).toString())
+      params.set('ay', Math.round(rect.top).toString())
+      params.set('aw', Math.round(rect.width).toString())
+      params.set('ah', Math.round(rect.height).toString())
+    } catch(err) {}
+
     window.history.pushState({}, '', `${window.location.pathname}?${params.toString()}`)
     // Trigger popstate so AppShell sees the change if necessary, or just use useRouter but we are in a component.
     // Actually, AppShell uses useSearchParams() which listens to URL changes.
@@ -122,7 +132,7 @@ export default function KanbanSidebar() {
                 </div>
                 <button 
                   className={styles.addBtn} 
-                  onClick={(e) => { e.stopPropagation(); openTaskModal(undefined, status) }}
+                  onClick={(e) => { e.stopPropagation(); openTaskModal(e, undefined, status) }}
                   title={`Add task to ${STATUS_LABELS[status]}`}
                 >
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 5v14M5 12h14"/></svg>
@@ -138,7 +148,7 @@ export default function KanbanSidebar() {
                       <div 
                         key={task.id} 
                         className={styles.taskCard}
-                        onClick={() => openTaskModal(task.id)}
+                        onClick={(e) => openTaskModal(e, task.id)}
                         draggable
                         onDragStart={(e) => {
                           e.dataTransfer.setData('taskId', task.id)
@@ -155,20 +165,41 @@ export default function KanbanSidebar() {
                         }}
                       >
                         <div className={styles.cardHeader}>
-                          {task.project && (
-                            <div 
-                              className={styles.projectPill} 
-                              style={{ backgroundColor: `${task.project.color}15`, color: task.project.color }}
-                            >
-                              {task.project.name}
-                            </div>
-                          )}
-                          {task.dueDate && (
-                            <div className={styles.dueDate}>
-                              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                              {new Date(task.dueDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
-                            </div>
-                          )}
+                          <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', flex: 1, paddingRight: '4px' }}>
+                            {task.project && (
+                              <div 
+                                className={styles.projectPill} 
+                                style={{ backgroundColor: `${task.project.color}15`, color: task.project.color }}
+                              >
+                                {task.project.name}
+                              </div>
+                            )}
+                            {task.priority && (
+                              <div 
+                                className={styles.projectPill} 
+                                style={{
+                                  backgroundColor: 
+                                    task.priority === 'URGENT' ? '#ea433515' : 
+                                    task.priority === 'HIGH' ? '#fa7b1715' : 
+                                    task.priority === 'MEDIUM' ? '#fbbc0515' : '#80868b15',
+                                  color: 
+                                    task.priority === 'URGENT' ? '#ea4335' : 
+                                    task.priority === 'HIGH' ? '#fa7b17' : 
+                                    task.priority === 'MEDIUM' ? '#f8b100' : '#80868b'
+                                }}
+                              >
+                                {task.priority}
+                              </div>
+                            )}
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginLeft: 'auto', flexShrink: 0 }}>
+                            {task.dueDate && (
+                              <div className={styles.dueDate}>
+                                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                                {new Date(task.dueDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                              </div>
+                            )}
+                          </div>
                         </div>
                         <div className={styles.taskTitle}>{task.title}</div>
                       </div>

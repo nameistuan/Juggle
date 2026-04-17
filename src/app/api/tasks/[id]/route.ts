@@ -82,6 +82,17 @@ export async function PUT(
         where: { id },
         include: taskInclude,
       })
+
+      if (updateInput.title !== undefined || updateInput.description !== undefined) {
+        await prisma.event.updateMany({
+          where: { taskId: id },
+          data: {
+            ...(updateInput.title !== undefined && { title: updateInput.title as string }),
+            ...(updateInput.description !== undefined && { description: updateInput.description as string | null })
+          }
+        })
+      }
+
       return NextResponse.json(task)
     }
 
@@ -90,6 +101,17 @@ export async function PUT(
       data: updateInput,
       include: taskInclude,
     })
+
+    if (updateInput.title !== undefined || updateInput.description !== undefined) {
+      await prisma.event.updateMany({
+        where: { taskId: id },
+        data: {
+          ...(updateInput.title !== undefined && { title: updateInput.title as string }),
+          ...(updateInput.description !== undefined && { description: updateInput.description as string | null })
+        }
+      })
+    }
+
     return NextResponse.json(task)
   } catch (error) {
     if (isPrismaNotFound(error)) return jsonError('Task not found', 404)

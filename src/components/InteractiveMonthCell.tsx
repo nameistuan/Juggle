@@ -2,7 +2,7 @@
 
 import { ReactNode } from 'react'
 import { useRouter, usePathname, useSearchParams } from 'next/navigation'
-import { updateEvent } from '@/lib/undoManager'
+import { updateEvent, createEvent } from '@/lib/undoManager'
 
 export default function InteractiveMonthCell({ 
   dateStr, 
@@ -40,26 +40,57 @@ export default function InteractiveMonthCell({
     e.currentTarget.classList.remove('drag-hover') // Clean up visual state natively if added
     
     const eventId = e.dataTransfer.getData('eventId')
+    const taskId = e.dataTransfer.getData('taskId')
+    const taskTitle = e.dataTransfer.getData('taskTitle')
     const eventStartTime = e.dataTransfer.getData('eventStartTime')
     const eventDurationMsRaw = e.dataTransfer.getData('eventDurationMs') // Also bind duration natively for integrity
-    if (!eventId || !eventStartTime) return
+    
+    if (!eventId && !taskId) return
     
     const durationMs = eventDurationMsRaw ? parseInt(eventDurationMsRaw) : 3600000
 
     // Extract original time components to preserve intra-day fidelity when dragging across months
-    const originalDate = new Date(eventStartTime)
+    const originalDate = eventStartTime ? new Date(eventStartTime) : new Date(new Date().setHours(8, 0, 0, 0))
     const [yyyy, mm, dd] = dateStr.split('-').map(Number)
     
     const dropStartDate = new Date(yyyy, mm - 1, dd, originalDate.getHours(), originalDate.getMinutes(), 0)
     const dropEndDate = new Date(dropStartDate.getTime() + durationMs)
 
     try {
-      const label = await updateEvent(eventId, {
-        startTime: dropStartDate.toISOString(),
-        endTime: dropEndDate.toISOString()
-      })
-      if (label) {
-        window.dispatchEvent(new CustomEvent('pac-toast', { detail: `Moved "${label}" — Press ⌘Z to undo` }))
+      if (eventId) {
+        const label = await updateEvent(eventId, {
+          startTime: dropStartDate.toISOString(),
+          endTime: dropEndDate.toISOString()
+        })
+        if (label) {
+          window.dispatchEvent(new CustomEvent('pac-toast', { detail: `Moved "${label}" — Press ⌘Z to undo` }))
+        }
+      } else if (taskId) {
+        const newEventId = await createEvent({
+          title: taskTitle || 'Task Block',
+          description: null,
+          location: null,
+          startTime: dropStartDate.toISOString(),
+          endTime: dropEndDate.toISOString(),
+          projectId: null,
+          taskId: taskId,
+          isFluid: false
+        })
+        
+        try {
+          await fetch(`/api/tasks/${taskId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status: 'IN_PROGRESS' })
+          });
+          window.dispatchEvent(new CustomEvent('pac-task-updated'))
+        } catch (err) {
+          console.error('Failed to update task status to IN_PROGRESS on drop', err)
+        }
+
+        if (newEventId) {
+          window.dispatchEvent(new CustomEvent('pac-toast', { detail: `Blocked time for "${taskTitle}" — Press ⌘Z to undo` }))
+        }
       }
       await router.refresh()
     } catch (err) {

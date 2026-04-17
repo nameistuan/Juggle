@@ -267,6 +267,18 @@ export default function InteractiveDayCol({ dateStr, className, children, style 
           taskId: taskId,
           isFluid: false
         })
+        
+        try {
+          await fetch(`/api/tasks/${taskId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status: 'IN_PROGRESS' })
+          });
+          window.dispatchEvent(new CustomEvent('pac-task-updated'))
+        } catch (err) {
+          console.error('Failed to update task status to IN_PROGRESS on drop', err)
+        }
+
         if (newEventId) {
           window.dispatchEvent(new CustomEvent('pac-toast', { detail: `Blocked time for "${taskTitle}" — Press ⌘Z to undo` }))
         }
