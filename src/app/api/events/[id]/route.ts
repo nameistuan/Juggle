@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { Prisma } from '@prisma/client/wasm'
+import { Prisma } from '@prisma/client'
 import prisma from '@/lib/prisma'
 import {
   isPrismaNotFound,
