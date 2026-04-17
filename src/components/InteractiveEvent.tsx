@@ -39,6 +39,30 @@ export default function InteractiveEvent({
   const router = useRouter()
   const blockRef = useRef<HTMLDivElement>(null)
   
+  // Compute position from local timezone (Vercel server is UTC, browser is local).
+  // Use the server-provided prop as SSR initial value to avoid hydration mismatch,
+  // then correct it post-mount using the browser's actual local timezone.
+  const [localTopFraction, setLocalTopFraction] = useState(topFraction)
+  const [localHeightFraction, setLocalHeightFraction] = useState(heightFraction)
+
+  useEffect(() => {
+    // event.startTime = clipped display start (ISO string after server serialization)
+    const displayStart = new Date(event.startTime ?? event.fullStartTime)
+    const displayEnd = new Date(event.endTime ?? event.fullEndTime)
+    
+    const [y, m, d] = dateStr.split('-').map(Number)
+    const dayMidnight = new Date(y, m - 1, d, 0, 0, 0, 0)
+    const dayEndMs = new Date(y, m - 1, d, 24, 0, 0, 0).getTime()
+
+    const clippedStartMs = Math.max(displayStart.getTime(), dayMidnight.getTime())
+    const clippedEndMs = Math.min(displayEnd.getTime(), dayEndMs)
+
+    if (clippedEndMs > clippedStartMs) {
+      setLocalTopFraction((clippedStartMs - dayMidnight.getTime()) / 3600000)
+      setLocalHeightFraction((clippedEndMs - clippedStartMs) / 3600000)
+    }
+  }, [dateStr, event.startTime, event.endTime, event.fullStartTime, event.fullEndTime])
+
   const isResizing = useRef(false)
   const justResized = useRef(false)
   const startY = useRef(0)
@@ -263,8 +287,8 @@ export default function InteractiveEvent({
       style={{
         opacity: isHidden ? 0 : 1,
         pointerEvents: isHidden ? 'none' : 'auto',
-        top: `calc(var(--hour-height) * ${topFraction})`,
-        height: `max(16px, calc(var(--hour-height) * ${heightFraction}))`,
+        top: `calc(var(--hour-height) * ${localTopFraction})`,
+        height: `max(16px, calc(var(--hour-height) * ${localHeightFraction}))`,
         position: 'absolute',
         left: assignedLeft,
         right: '6px',

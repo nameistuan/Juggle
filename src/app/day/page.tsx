@@ -103,7 +103,8 @@ export default async function DayView({
         <div className={styles.timeCol}>
           {hours.map(hour => (
             <div key={hour} className={styles.timeLabel} style={{ top: `calc(var(--hour-height) * ${hour})` }}>
-              {hour === 0 ? '' : format(new Date().setHours(hour, 0), 'ha')}
+              {hour === 0 ? '' : `${hour % 12 || 12}${hour < 12 ? 'AM' : 'PM'}`}
+
             </div>
           ))}
         </div>
