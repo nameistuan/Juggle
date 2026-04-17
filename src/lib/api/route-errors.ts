@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { Prisma } from '@prisma/client'
+import { Prisma } from '@prisma/client/wasm'
 import { flattenError, type ZodError } from 'zod'
 
 export function jsonError(message: string, status: number, extra?: Record<string, unknown>) {
