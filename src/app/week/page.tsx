@@ -12,12 +12,7 @@ import {
 } from 'date-fns'
 import { parseISOString } from '@/lib/dateUtils'
 import Link from 'next/link'
-import InteractiveDayCol from '@/components/InteractiveDayCol'
-import InteractiveEvent from '@/components/InteractiveEvent'
-import AllDayRow from '@/components/AllDayRow'
-import { calculateEventLayout } from '@/lib/groupEvents'
-
-import { prepareEventsForGrid } from '@/lib/calendarEngine'
+import ClientGridWrapper from '@/components/ClientGridWrapper'
 import { HOUR_HEIGHT } from '@/lib/constants'
 
 export const dynamic = 'force-dynamic' 
@@ -65,19 +60,6 @@ export default async function WeekView({
     include: { project: true }
   }) as any[];
 
-  // 1. Centralized Slicing & Processing
-  const daySegmentsMap = prepareEventsForGrid(rawEvents, startDate, endDate);
-
-  // Separate all-day (fluid) events per day
-  const allDayByDate: Record<string, { id: string; title: string; project?: { color: string } | null }[]> = {}
-  daysInGrid.forEach(day => {
-    const dateStr = format(day, 'yyyy-MM-dd')
-    allDayByDate[dateStr] = (daySegmentsMap.get(dateStr) ?? [])
-      .filter(s => s.isFluid)
-      .map(s => ({ id: s.id, title: s.title, project: s.project }))
-  })
-
-  const hours = Array.from({ length: 24 }).map((_, i) => i)
   const dayStrs = daysInGrid.map(d => format(d, 'yyyy-MM-dd'))
 
   return (
@@ -92,62 +74,17 @@ export default async function WeekView({
             </span>
           </div>
         ))}
-        {/* All-day row */}
-        <AllDayRow
-          days={dayStrs}
-          eventsByDate={allDayByDate}
+        <ClientGridWrapper
+          rawEvents={rawEvents}
+          dayStrs={dayStrs}
+          getEventUrl={getEventUrl}
           baseUrl="/week"
           dateParam={date}
+          dayColClassName={styles.dayCol}
+          eventBlockClassName={styles.eventBlock}
+          timeColClassName={styles.timeCol}
+          timeLabelClassName={styles.timeLabel}
         />
-
-        {/* Time Column */}
-        <div className={styles.timeCol}>
-          {hours.map(hour => (
-            <div key={hour} className={styles.timeLabel} style={{ top: `calc(var(--hour-height) * ${hour})` }}>
-              {hour === 0 ? '' : `${hour % 12 || 12}${hour < 12 ? 'AM' : 'PM'}`}
-            </div>
-          ))}
-        </div>
-
-        {/* Days Grid */}
-        {daysInGrid.map(day => {
-            const dateStr = format(day, 'yyyy-MM-dd')
-            const daySegments = (daySegmentsMap.get(dateStr) || []).filter(s => !s.isFluid)
-
-            // 2. Perform Layout Clustering
-            const layoutEvents = calculateEventLayout(daySegments)
-
-            return (
-              <InteractiveDayCol key={day.toISOString()} dateStr={dateStr} className={styles.dayCol}>
-                {layoutEvents.map((le) => {
-                  const startHour = le.displayStart.getHours()
-                  const startMin = le.displayStart.getMinutes()
-                  
-                  const durationMs = le.displayEnd.getTime() - le.displayStart.getTime()
-                  const topFraction = startHour + (startMin / 60)
-                  const heightFraction = durationMs / 3600000
-
-                  return (
-                    <InteractiveEvent
-                      key={`${le.id}-${dateStr}`}
-                      event={le}
-                      href={getEventUrl(le)}
-                      dateStr={dateStr}
-                      topFraction={topFraction}
-                      heightFraction={heightFraction}
-                      assignedLeft={le.assignedLeft}
-                      isLayoutIndented={le.isLayoutIndented}
-                      zIndex={le.zIndex}
-                      // Pre-computed clipping meta from the engine
-                      isStartClipped={le.isStartClipped}
-                      isEndClipped={le.isEndClipped}
-                      className={styles.eventBlock}
-                    />
-                  )
-                })}
-                </InteractiveDayCol>
-              )
-            })}
       </div>
     </div>
   )

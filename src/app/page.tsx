@@ -12,11 +12,7 @@ import {
   format,
   parseISO
 } from 'date-fns'
-import Link from 'next/link'
-import InteractiveMonthCell from '@/components/InteractiveMonthCell'
-import InteractiveMonthEvent from '@/components/InteractiveMonthEvent'
-
-import { prepareEventsForGrid } from '@/lib/calendarEngine'
+import ClientMonthGrid from '@/components/ClientMonthGrid'
 
 export const dynamic = 'force-dynamic' 
 
@@ -71,65 +67,19 @@ export default async function MonthView({
     include: { project: true }
   }) as any[];
 
-  // 4. Centralized Slicing
-  const daySegmentsMap = prepareEventsForGrid(rawEvents, startDate, endDate);
-
-  const calendarDays = daysInGrid.map(day => {
-    const dateStr = format(day, 'yyyy-MM-dd');
-    const daySegments = daySegmentsMap.get(dateStr) || [];
-    
-    // Sort by original start time
-    daySegments.sort((a, b) => a.fullStartTime.getTime() - b.fullStartTime.getTime());
-
-    return {
-      dateObj: day,
-      date: day.getDate(),
-      isToday: isToday(day),
-      isOtherMonth: !isSameMonth(day, monthStart),
-      events: daySegments
-    }
-  })
+  const dayStrs = daysInGrid.map(d => format(d, 'yyyy-MM-dd'));
+  const monthStartStr = format(monthStart, 'yyyy-MM-dd');
 
   return (
     <div className={styles.monthView}>
       <div className={styles.calendarGrid}>
-        {calendarDays.map((day, index) => {
-          const dateStr = format(day.dateObj, 'yyyy-MM-dd')
-          
-          return (
-          <InteractiveMonthCell 
-            key={index} 
-            dateStr={dateStr}
-            className={`
-              ${styles.dayCell} 
-              ${day.isToday ? styles.today : ''} 
-              ${day.isOtherMonth ? styles.otherMonth : ''}
-            `}
-          >
-            {index < 7 && (
-              <div className={styles.dayName}>{format(day.dateObj, 'EEE')}</div>
-            )}
-            <div className={styles.dateNumberWrapper}>
-              <div className={styles.dateNumber}>
-                {day.date}
-              </div>
-            </div>
-            
-            <div className={styles.eventsContainer}>
-              {day.events.map((event: any) => (
-                <InteractiveMonthEvent
-                  key={event.id}
-                  event={event}
-                  href={getEventUrl(event)}
-                  className={styles.eventBadge}
-                  dotClassName={styles.eventDot}
-                  timeClassName={styles.eventTime}
-                  titleClassName={styles.eventTitle}
-                />
-              ))}
-            </div>
-          </InteractiveMonthCell>
-        )})}
+        <ClientMonthGrid 
+          rawEvents={rawEvents}
+          dayStrs={dayStrs}
+          monthStartStr={monthStartStr}
+          getEventUrl={getEventUrl}
+          styles={styles}
+        />
       </div>
     </div>
   )

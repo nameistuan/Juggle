@@ -63,6 +63,12 @@ export default function EventModal({
 
   useEffect(() => {
     setMounted(true)
+    return () => {
+      // Clear dirty state on unmount to prevent false prompts later
+      if (typeof window !== 'undefined') {
+        ;(window as any).__isJuggleModalDirty = false
+      }
+    }
   }, [])
 
   // ... existing parsing helpers ...
@@ -179,6 +185,10 @@ export default function EventModal({
     if (isDirty()) {
       const confirmDiscard = window.confirm("You have unsaved changes. Do you want to discard them?")
       if (!confirmDiscard) return
+      // Safe discard: reset global flag immediately BEFORE closing
+      if (typeof window !== 'undefined') {
+        ;(window as any).__isJuggleModalDirty = false
+      }
     }
     onClose()
   }
