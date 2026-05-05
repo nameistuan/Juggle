@@ -2,8 +2,8 @@
 
 import React, { useMemo } from 'react'
 import { format } from 'date-fns'
-import { prepareEventsForGrid } from '@/lib/calendarEngine'
-import { calculateEventLayout } from '@/lib/groupEvents'
+import { prepareEventsForGrid, EventSegment } from '@/lib/calendarEngine'
+import { calculateEventLayout, EventWithLayout } from '@/lib/groupEvents'
 import InteractiveDayCol from './InteractiveDayCol'
 import InteractiveEvent from './InteractiveEvent'
 import AllDayRow from './AllDayRow'
@@ -11,10 +11,13 @@ import AllDayRow from './AllDayRow'
 export default function ClientGridWrapper({
   rawEvents,
   dayStrs,
-
   getEventUrl,
   baseUrl,
-  dateParam
+  dateParam,
+  dayColClassName,
+  eventBlockClassName,
+  timeColClassName,
+  timeLabelClassName
 }: {
   rawEvents: any[]
   dayStrs: string[]
@@ -27,7 +30,7 @@ export default function ClientGridWrapper({
   timeLabelClassName?: string
 }) {
   const { daySegmentsMap, allDayByDate } = useMemo(() => {
-    const map = new Map()
+    const map = new Map<string, EventSegment[]>()
     const allDay: Record<string, any[]> = {}
     
     if (dayStrs.length === 0) return { daySegmentsMap: map, allDayByDate: allDay }
@@ -43,7 +46,7 @@ export default function ClientGridWrapper({
     
     dayStrs.forEach(dateStr => {
       const segs = engineMap.get(dateStr) || []
-      allDay[dateStr] = segs.filter((s: any) => s.isFluid).map((s: any) => ({ id: s.id, title: s.title, project: s.project }))
+      allDay[dateStr] = segs.filter(s => s.isFluid).map(s => ({ id: s.id, title: s.title, project: s.project }))
     })
 
     return { daySegmentsMap: engineMap, allDayByDate: allDay }
@@ -72,8 +75,8 @@ export default function ClientGridWrapper({
       
       {/* Days Grid */}
       {dayStrs.map(dateStr => {
-        const daySegments = (daySegmentsMap.get(dateStr) || []).filter((s: any) => !s.isFluid)
-        const layoutEvents = calculateEventLayout(daySegments)
+        const daySegments = (daySegmentsMap.get(dateStr) || []).filter(s => !s.isFluid)
+        const layoutEvents = calculateEventLayout<EventSegment>(daySegments)
 
         return (
           <InteractiveDayCol key={dateStr} dateStr={dateStr} className={dayColClassName || ''}>
