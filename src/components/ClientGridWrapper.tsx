@@ -11,9 +11,9 @@ import AllDayRow from './AllDayRow'
 export default function ClientGridWrapper({
   rawEvents,
   dayStrs,
-  getEventUrl,
   baseUrl,
   dateParam,
+  monthParam,
   dayColClassName,
   eventBlockClassName,
   timeColClassName,
@@ -21,9 +21,9 @@ export default function ClientGridWrapper({
 }: {
   rawEvents: any[]
   dayStrs: string[]
-  getEventUrl: (event: any) => string
   baseUrl: string
   dateParam?: string
+  monthParam?: string
   dayColClassName?: string
   eventBlockClassName?: string
   timeColClassName?: string
@@ -51,6 +51,18 @@ export default function ClientGridWrapper({
 
     return { daySegmentsMap: engineMap, allDayByDate: allDay }
   }, [rawEvents, dayStrs])
+
+  const getEventUrl = (event: any) => {
+    const params = new URLSearchParams()
+    if (dateParam) params.set('date', dateParam)
+    if (monthParam) params.set('month', monthParam)
+    if (event.taskId) {
+      params.set('editTask', event.taskId)
+    } else {
+      params.set('editEvent', event.id)
+    }
+    return `${baseUrl}?${params.toString()}`
+  }
 
   const hours = Array.from({ length: 24 }).map((_, i) => i)
 

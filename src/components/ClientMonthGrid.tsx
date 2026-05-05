@@ -10,13 +10,15 @@ export default function ClientMonthGrid({
   rawEvents,
   dayStrs,
   monthStartStr,
-  getEventUrl,
+  currentDateStr,
+  currentMonthStr,
   styles
 }: {
   rawEvents: any[]
   dayStrs: string[]
   monthStartStr: string
-  getEventUrl: (event: any) => string
+  currentDateStr?: string
+  currentMonthStr?: string
   styles: any
 }) {
   const daySegmentsMap = useMemo(() => {
@@ -30,6 +32,18 @@ export default function ClientMonthGrid({
 
     return prepareEventsForGrid(rawEvents, startDate, endDate)
   }, [rawEvents, dayStrs])
+
+  const getEventUrl = (event: any) => {
+    const params = new URLSearchParams()
+    if (currentDateStr) params.set('date', currentDateStr)
+    if (currentMonthStr) params.set('month', currentMonthStr)
+    if (event.taskId) {
+      params.set('editTask', event.taskId)
+    } else {
+      params.set('editEvent', event.id)
+    }
+    return `/?${params.toString()}`
+  }
 
   const [msy, msm, msd] = monthStartStr.split('-').map(Number)
   const monthStart = new Date(msy, msm - 1, msd)

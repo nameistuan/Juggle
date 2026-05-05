@@ -6,14 +6,9 @@ import {
   isToday,
   format,
   startOfWeek,
-  subDays,
-  parseISO,
-  startOfDay
 } from 'date-fns'
 import { parseISOString } from '@/lib/dateUtils'
-import Link from 'next/link'
 import ClientGridWrapper from '@/components/ClientGridWrapper'
-import { HOUR_HEIGHT } from '@/lib/constants'
 
 export const dynamic = 'force-dynamic' 
 
@@ -26,18 +21,6 @@ export default async function WeekView({
   const currentDate = parseISOString(date)
   const session = await auth()
   const userId = session?.user?.id
-  
-  const getEventUrl = (event: any) => {
-    const params = new URLSearchParams()
-    if (date) params.set('date', date)
-    if (month) params.set('month', month)
-    if (event.taskId) {
-      params.set('editTask', event.taskId)
-    } else {
-      params.set('editEvent', event.id)
-    }
-    return `/week?${params.toString()}`
-  }
   
   // Standard Rigid Week Logic: Always frame Sunday-Saturday
   const startDate = startOfWeek(currentDate, { weekStartsOn: 0 })
@@ -77,9 +60,9 @@ export default async function WeekView({
         <ClientGridWrapper
           rawEvents={rawEvents}
           dayStrs={dayStrs}
-          getEventUrl={getEventUrl}
           baseUrl="/week"
           dateParam={date}
+          monthParam={month}
           dayColClassName={styles.dayCol}
           eventBlockClassName={styles.eventBlock}
           timeColClassName={styles.timeCol}
